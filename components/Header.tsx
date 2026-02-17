@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
 const navLinks = [
   { href: "/leaderboard", label: "Leaderboard" },
@@ -13,7 +16,7 @@ export default function Header() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-3">
           <span className="font-serif text-3xl font-bold tracking-tight text-gold">
-            CS
+            CT
           </span>
           <span className="hidden text-sm font-medium tracking-widest text-cream/80 uppercase sm:inline">
             Championship Series
@@ -31,6 +34,27 @@ export default function Header() {
               </Link>
             </li>
           ))}
+          {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && (
+            <li>
+              <SignedOut>
+                <Link
+                  href="/sign-in"
+                  className="rounded-full bg-gold px-4 py-2 text-sm font-semibold text-dark-green transition-colors hover:bg-gold-dark"
+                >
+                  Sign In
+                </Link>
+              </SignedOut>
+              <SignedIn>
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: "h-8 w-8 ring-2 ring-gold/50",
+                    },
+                  }}
+                />
+              </SignedIn>
+            </li>
+          )}
         </ul>
       </nav>
     </header>

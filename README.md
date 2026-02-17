@@ -31,11 +31,24 @@ design theme.
    ```
 6. Open [http://localhost:3000](http://localhost:3000)
 
+## Clerk Setup
+
+1. Create a Clerk application at [clerk.com](https://clerk.com)
+2. Copy your **Publishable Key** and **Secret Key** into `.env.local`
+3. In the Clerk Dashboard, go to **Webhooks** and create a webhook pointing to:
+   ```
+   https://<your-convex-deployment>.convex.site/clerk-webhook
+   ```
+4. Subscribe to events: `user.created`, `user.updated`
+5. Copy the **Signing Secret** and set it:
+   - In `.env.local` as `CLERK_WEBHOOK_SECRET`
+   - In Convex: `npx convex env set CLERK_WEBHOOK_SECRET whsec_...`
+
 ## Build Checklist
 
 - [x] Prompt 1: Project scaffold with Next.js + Tailwind Masters theme
 - [x] Prompt 2: Convex schema and database setup
-- [ ] Prompt 3
+- [x] Prompt 3: Clerk authentication with Convex user sync
 - [ ] Prompt 4
 - [ ] Prompt 5
 - [ ] Prompt 6

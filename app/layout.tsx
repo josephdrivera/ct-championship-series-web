@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
+import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
 
 const playfairDisplay = Playfair_Display({
   variable: "--font-playfair-display",
@@ -31,8 +32,10 @@ export default function RootLayout({
       <body
         className={`${playfairDisplay.variable} ${dmSans.variable} font-sans antialiased`}
       >
-        <Header />
-        {children}
+        <ConvexClientProvider>
+          <Header />
+          {children}
+        </ConvexClientProvider>
       </body>
     </html>
   );

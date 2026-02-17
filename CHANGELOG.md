@@ -6,6 +6,22 @@ in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-02-17
+
+### Added
+
+- Clerk authentication integration with ClerkProvider and ConvexProviderWithClerk
+- ConvexClientProvider wrapper component for client-side auth context
+- Middleware protecting non-public routes with clerkMiddleware
+- Sign-in page at /sign-in with Masters-themed Clerk components
+- Sign-up page at /sign-up with Masters-themed Clerk components
+- Clerk webhook handler (convex/http.ts) for user.created and user.updated events
+- Svix webhook signature verification for security
+- User upsert internal mutation (convex/users.ts) for syncing Clerk users to Convex
+- getCurrentUser query for fetching the authenticated user's Convex record
+- Auth-aware Header with SignedIn/SignedOut states and UserButton
+- Clerk profile image domain in next.config.ts
+
 ## [0.2.0] - 2026-02-17
 
 ### Added
