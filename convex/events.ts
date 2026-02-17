@@ -111,3 +111,48 @@ export const updateEvent = mutation({
     await ctx.db.patch(eventId, patch);
   },
 });
+
+export const getSeasonEvents = query({
+  args: { seasonId: v.id("seasons") },
+  handler: async (ctx, args) => {
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_season", (q) => q.eq("seasonId", args.seasonId))
+      .collect();
+
+    const withCourses = await Promise.all(
+      events.map(async (event) => ({
+        event,
+        course: await ctx.db.get(event.courseId),
+      }))
+    );
+
+    return withCourses.sort(
+      (a, b) => a.event.eventNumber - b.event.eventNumber
+    );
+  },
+});
+
+export const getEventById = query({
+  args: { eventId: v.id("events") },
+  handler: async (ctx, args) => {
+    const event = await ctx.db.get(args.eventId);
+    if (!event) return null;
+
+    const course = await ctx.db.get(event.courseId);
+
+    return { event, course };
+  },
+});
+
+export const getCompletedEventIds = query({
+  args: {},
+  handler: async (ctx) => {
+    const completed = await ctx.db
+      .query("events")
+      .withIndex("by_status", (q) => q.eq("status", "completed"))
+      .collect();
+
+    return completed.map((e) => ({ eventId: e._id }));
+  },
+});

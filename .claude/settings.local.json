@@ -10,7 +10,8 @@
       "Bash(git branch:*)",
       "Bash(test:*)",
       "Bash(git checkout:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npx next build:*)"
     ]
   }
 }

@@ -6,6 +6,36 @@ in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-02-17
+
+### Added
+
+- Events list page at /events showing all season events in a card grid
+- Event cards with: event number, name, course, date, format badge, MAJOR badge (azalea pink), status indicator
+- Green pulsing LIVE badge on active events using fairway color with animate-pulse
+- Event detail page at /events/[eventId] with hero header on dark green gradient
+- Info chips row: date, format, par, and multiplier on the detail page
+- Scorecard table with columns: Position, Player, Gross, Net, +/- to Par, Points
+- Gold accent row highlight for event winner matching leaderboard pattern
+- Azalea pink major championship banner with "2x Points" indicator on major events
+- Breadcrumbs navigation: Home > Events > Event Name with aria-current for accessibility
+- generateStaticParams for pre-rendering completed event detail pages at build time
+- SEO metadata and Open Graph tags for both events pages
+- Convex queries: getSeasonEvents (all events with course join), getEventById (single event), getCompletedEventIds (for static generation)
+
+## [0.5.0] - 2026-02-17
+
+### Added
+
+- Leaderboard page at /leaderboard with SSR using Convex preloaded queries
+- Featured leader card with dark green gradient, gold crown icon, avatar, total points, wins, and scoring average
+- Full standings table with columns: Rank, Player (avatar + name), Wins, Avg Score, Handicap, Points, Gap to Leader
+- Gold highlight on leader row in standings table
+- PlayerAvatar component with next/image for Clerk photos and initials fallback
+- Open Graph meta tags for social sharing (title and description)
+- Responsive layout with horizontal scroll table on mobile
+- Empty state handling for no active season and no standings data
+
 ## [0.4.0] - 2026-02-17
 
 ### Added

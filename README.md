@@ -50,8 +50,8 @@ design theme.
 - [x] Prompt 2: Convex schema and database setup
 - [x] Prompt 3: Clerk authentication with Convex user sync
 - [x] Prompt 4: Convex server functions (queries + mutations)
-- [ ] Prompt 5
-- [ ] Prompt 6
+- [x] Prompt 5: Leaderboard page with SSR preloaded queries
+- [x] Prompt 6: Events list page and event detail page with scorecard
 - [ ] Prompt 7
 - [ ] Prompt 8
 - [ ] Prompt 9

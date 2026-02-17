@@ -8,7 +8,15 @@
  * @module
  */
 
+import type * as courses from "../courses.js";
+import type * as events from "../events.js";
+import type * as helpers from "../helpers.js";
 import type * as http from "../http.js";
+import type * as players from "../players.js";
+import type * as rounds from "../rounds.js";
+import type * as scores from "../scores.js";
+import type * as seasons from "../seasons.js";
+import type * as standings from "../standings.js";
 import type * as users from "../users.js";
 
 import type {
@@ -18,7 +26,15 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  courses: typeof courses;
+  events: typeof events;
+  helpers: typeof helpers;
   http: typeof http;
+  players: typeof players;
+  rounds: typeof rounds;
+  scores: typeof scores;
+  seasons: typeof seasons;
+  standings: typeof standings;
   users: typeof users;
 }>;
 
