@@ -9,6 +9,7 @@ export default defineSchema({
     photo: v.optional(v.string()),
     joinedYear: v.number(),
     isCommissioner: v.boolean(),
+    isSuperAdmin: v.optional(v.boolean()),
   }).index("by_clerk_id", ["clerkId"]),
 
   seasons: defineTable({

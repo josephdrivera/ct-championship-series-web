@@ -33,6 +33,14 @@ export const getChampionHistory = query({
   },
 });
 
+export const getAllSeasons = query({
+  args: {},
+  handler: async (ctx) => {
+    const seasons = await ctx.db.query("seasons").collect();
+    return seasons.sort((a, b) => b.year - a.year);
+  },
+});
+
 export const createSeason = mutation({
   args: {
     year: v.number(),
@@ -52,5 +60,34 @@ export const createSeason = mutation({
       name: args.name,
       status: "upcoming",
     });
+  },
+});
+
+export const updateSeason = mutation({
+  args: {
+    seasonId: v.id("seasons"),
+    name: v.optional(v.string()),
+    status: v.optional(
+      v.union(
+        v.literal("upcoming"),
+        v.literal("active"),
+        v.literal("completed")
+      )
+    ),
+    championId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    await requireCommissioner(ctx);
+
+    const season = await ctx.db.get(args.seasonId);
+    if (!season) throw new Error("Season not found");
+
+    const { seasonId, ...updates } = args;
+    const patch: Record<string, unknown> = {};
+    if (updates.name !== undefined) patch.name = updates.name;
+    if (updates.status !== undefined) patch.status = updates.status;
+    if (updates.championId !== undefined) patch.championId = updates.championId;
+
+    await ctx.db.patch(seasonId, patch);
   },
 });

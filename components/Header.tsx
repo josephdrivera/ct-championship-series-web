@@ -2,6 +2,21 @@
 
 import Link from "next/link";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+
+function AdminLink() {
+  const currentUser = useQuery(api.users.getCurrentUser);
+  if (!currentUser?.isCommissioner && !currentUser?.isSuperAdmin) return null;
+  return (
+    <Link
+      href="/admin"
+      className="text-sm font-semibold text-gold transition-colors hover:text-gold/80"
+    >
+      Admin
+    </Link>
+  );
+}
 
 const navLinks = [
   { href: "/leaderboard", label: "Leaderboard" },
@@ -45,13 +60,16 @@ export default function Header() {
                 </Link>
               </SignedOut>
               <SignedIn>
-                <UserButton
-                  appearance={{
-                    elements: {
-                      avatarBox: "h-8 w-8 ring-2 ring-gold/50",
-                    },
-                  }}
-                />
+                <div className="flex items-center gap-4">
+                  <AdminLink />
+                  <UserButton
+                    appearance={{
+                      elements: {
+                        avatarBox: "h-8 w-8 ring-2 ring-gold/50",
+                      },
+                    }}
+                  />
+                </div>
               </SignedIn>
             </li>
           )}

@@ -11,10 +11,12 @@
   "dependencies": {
     "@clerk/nextjs": "^6.37.4",
     "convex": "^1.31.7",
+    "framer-motion": "^12.34.1",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "recharts": "^3.7.0",
+    "sonner": "^2.0.7",
     "svix": "^1.85.0"
   },
   "devDependencies": {

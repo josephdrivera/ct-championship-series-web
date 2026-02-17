@@ -57,6 +57,18 @@ export const getLiveLeaderboard = query({
   },
 });
 
+export const getRoundHoleScores = query({
+  args: { liveRoundId: v.id("liveRounds") },
+  handler: async (ctx, args) => {
+    const holeScores = await ctx.db
+      .query("holeScores")
+      .withIndex("by_round", (q) => q.eq("liveRoundId", args.liveRoundId))
+      .collect();
+
+    return holeScores.sort((a, b) => a.holeNumber - b.holeNumber);
+  },
+});
+
 export const startRound = mutation({
   args: { eventId: v.id("events") },
   handler: async (ctx, args) => {

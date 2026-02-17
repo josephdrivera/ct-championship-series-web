@@ -1,5 +1,6 @@
-import { query, internalMutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requireSuperAdmin } from "./helpers";
 
 export const getCurrentUser = query({
   args: {},
@@ -20,6 +21,26 @@ export const getUser = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.userId);
+  },
+});
+
+export const updateUserRole = mutation({
+  args: {
+    userId: v.id("users"),
+    isCommissioner: v.optional(v.boolean()),
+    isSuperAdmin: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    await requireSuperAdmin(ctx);
+
+    const user = await ctx.db.get(args.userId);
+    if (!user) throw new Error("User not found");
+
+    const patch: Record<string, boolean> = {};
+    if (args.isCommissioner !== undefined) patch.isCommissioner = args.isCommissioner;
+    if (args.isSuperAdmin !== undefined) patch.isSuperAdmin = args.isSuperAdmin;
+
+    await ctx.db.patch(args.userId, patch);
   },
 });
 
@@ -48,6 +69,7 @@ export const upsertFromClerk = internalMutation({
         photo: args.photo,
         joinedYear: new Date().getFullYear(),
         isCommissioner: false,
+        isSuperAdmin: false,
       });
       return userId;
     }

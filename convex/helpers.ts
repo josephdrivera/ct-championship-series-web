@@ -31,13 +31,25 @@ export async function requireUser(
 }
 
 /**
- * Returns the current user, asserting commissioner access.
+ * Returns the current user, asserting commissioner or super admin access.
  */
 export async function requireCommissioner(
   ctx: QueryCtx | MutationCtx
 ): Promise<Doc<"users">> {
   const user = await requireUser(ctx);
-  if (!user.isCommissioner) throw new Error("Commissioner access required");
+  if (!user.isCommissioner && !user.isSuperAdmin)
+    throw new Error("Commissioner access required");
+  return user;
+}
+
+/**
+ * Returns the current user, asserting super admin access.
+ */
+export async function requireSuperAdmin(
+  ctx: QueryCtx | MutationCtx
+): Promise<Doc<"users">> {
+  const user = await requireUser(ctx);
+  if (!user.isSuperAdmin) throw new Error("Super admin access required");
   return user;
 }
 

@@ -6,6 +6,85 @@ in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.1] - 2026-02-17
+
+### Added
+
+- Super admin role (`isSuperAdmin` field on users schema) with elevated privileges
+- `requireSuperAdmin` auth helper in convex/helpers.ts
+- `updateUserRole` mutation — super admins can promote/demote commissioners and other super admins
+- Admin players page at /admin/players with role badges (Super Admin, Commissioner, Member)
+- Role management toggle buttons for super admins to promote/demote users
+- Player invite form using Clerk backend SDK — sends email invitations to join the league
+- API route at /api/invite for sending Clerk invitations
+- Seed script (convex/seed.ts) with `seedData` mutation to bootstrap courses, season, and events
+- `promoteSuperAdmin` seed mutation to promote the first user to super admin
+- Admin layout now recognizes super admins alongside commissioners
+- Header Admin link now visible to both commissioners and super admins
+- Removed sign-up page (invitation-only mode)
+
+### Changed
+
+- `requireCommissioner` helper now grants access to both commissioners and super admins
+- Admin layout shows "Super Admin" or "Commissioner" role label dynamically
+
+## [0.10.0] - 2026-02-17
+
+### Added
+
+- Admin seasons page at /admin/seasons with full season management
+- Create new season form with year and name fields, inline validation, and duplicate year prevention
+- Season list showing all seasons with status badges (upcoming/active/completed)
+- Status toggle buttons to transition seasons between upcoming, active, and completed
+- Champion assignment dropdown on completed seasons (populated from player list)
+- Admin events page at /admin/events with full event management for the active season
+- Create event form with fields: name, course selector, date picker, format selector (stroke/match/bestBall/scramble/stableford/skins), event number (1-8), and major toggle with 2x multiplier badge
+- Events list showing all season events with status badges, major badges, course, date, and format
+- Inline edit form per event with pre-populated fields and save/cancel buttons
+- Status toggle buttons per event (upcoming/active/completed/canceled)
+- New Convex query: getAllSeasons for listing all seasons sorted by year
+- New Convex mutation: updateSeason for changing season status, name, and champion
+- Installed sonner toast library for success/error notifications
+- Toast notifications on all create, update, and status change operations
+- Inline validation errors on required form fields
+- Toaster component added to admin layout with Masters-themed styling
+
+## [0.9.0] - 2026-02-17
+
+### Added
+
+- Admin layout at /admin with Clerk middleware protection (redirects unauthenticated users to sign-in)
+- Commissioner authorization guard using Convex `getCurrentUser` query — shows "Not Authorized" for non-commissioners
+- Dark green sidebar navigation with links: Dashboard, Events, Courses, Scores, Players, Seasons
+- Commissioner name, avatar, and role badge in sidebar header
+- Active link highlighting using `usePathname()` with augusta green background
+- "Back to site" link at sidebar bottom
+- Mobile-responsive hamburger menu that opens sidebar as overlay with backdrop
+- Admin dashboard page with summary cards: Active Season, Upcoming Events count, Total Players count
+- Quick action buttons: Create Event, Enter Scores, Add Course (linking to admin sub-pages)
+- Conditional "Admin" link in site header — only visible to commissioners, styled in gold
+- Loading spinner state while auth status is being determined
+
+## [0.8.0] - 2026-02-17
+
+### Added
+
+- Live spectator page at /live/[eventId] — public, no auth required
+- Dark green background matching the Masters aesthetic throughout the page
+- Green pulsing LIVE NOW badge when event is actively being played
+- Real-time leaderboard table with columns: Position, Player (avatar + name), Thru, Today (color-coded: gold for under par, green for even, red for over), Gross, Net
+- Convex real-time subscriptions via useQuery for automatic leaderboard updates
+- Framer Motion animated row reordering when player positions change (layout animations)
+- Expandable player detail rows showing hole-by-hole scorecard on click
+- New Convex query: getRoundHoleScores for fetching per-hole scoring data
+- "Last updated" timestamp that refreshes with each real-time data update
+- "Tournament has not started yet" state for upcoming events with link to event detail
+- "Tournament complete — see final results" state for completed events with link to event detail
+- Open Graph meta tags for shareable live spectator URLs
+- "Share this link for anyone to spectate" footer message
+- Added /live route to Clerk middleware public routes
+- Installed framer-motion dependency for layout animations
+
 ## [0.7.0] - 2026-02-17
 
 ### Added

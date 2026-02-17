@@ -53,9 +53,9 @@ design theme.
 - [x] Prompt 5: Leaderboard page with SSR preloaded queries
 - [x] Prompt 6: Events list page and event detail page with scorecard
 - [x] Prompt 7: Players directory and player profile pages
-- [ ] Prompt 8
-- [ ] Prompt 9
-- [ ] Prompt 10
+- [x] Prompt 8: Live spectator page with real-time leaderboard
+- [x] Prompt 9: Admin layout with auth guard and dashboard
+- [x] Prompt 10: Admin season and event management pages
 - [ ] Prompt 11
 - [ ] Prompt 12
 - [ ] Prompt 13

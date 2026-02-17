@@ -16,6 +16,7 @@ import type * as players from "../players.js";
 import type * as rounds from "../rounds.js";
 import type * as scores from "../scores.js";
 import type * as seasons from "../seasons.js";
+import type * as seed from "../seed.js";
 import type * as standings from "../standings.js";
 import type * as users from "../users.js";
 
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   rounds: typeof rounds;
   scores: typeof scores;
   seasons: typeof seasons;
+  seed: typeof seed;
   standings: typeof standings;
   users: typeof users;
 }>;
