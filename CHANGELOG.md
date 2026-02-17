@@ -6,6 +6,25 @@ in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-02-17
+
+### Added
+
+- Players directory page at /players with filterable, sortable card grid
+- Search input to filter players by name with real-time filtering
+- Sort options: rank, name, handicap with pill-style toggle buttons
+- Player cards showing: avatar/initials, name, rank badge (gold for top 3), handicap, mini medal counts (wins + events)
+- Player profile page at /players/[userId] with green hero header and avatar
+- 3x2 stats grid: total points, avg score, wins, handicap, birdies, standing
+- Handicap trend chart using Recharts (green area chart with gradient fill, gold dot for current value)
+- Achievement badges row with earned (gold tint) and locked (dimmed) states for known achievement types
+- Recent results list with event links, course names, gross/net scores, finish positions, and points
+- Gold accent on winner results matching leaderboard pattern
+- JSON-LD structured data (Person schema) on player profiles for SEO
+- SEO metadata and Open Graph tags for both player pages
+- Breadcrumbs navigation: Home > Players > Player Name
+- Installed recharts dependency for data visualization
+
 ## [0.6.0] - 2026-02-17
 
 ### Added

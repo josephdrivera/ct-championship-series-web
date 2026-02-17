@@ -52,7 +52,7 @@ design theme.
 - [x] Prompt 4: Convex server functions (queries + mutations)
 - [x] Prompt 5: Leaderboard page with SSR preloaded queries
 - [x] Prompt 6: Events list page and event detail page with scorecard
-- [ ] Prompt 7
+- [x] Prompt 7: Players directory and player profile pages
 - [ ] Prompt 8
 - [ ] Prompt 9
 - [ ] Prompt 10
