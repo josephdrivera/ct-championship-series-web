@@ -37,6 +37,34 @@ export const createCourse = mutation({
   },
 });
 
+export const getCoursesWithStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const courses = await ctx.db.query("courses").collect();
+    const allEvents = await ctx.db.query("events").collect();
+
+    const results = await Promise.all(
+      courses.map(async (course) => {
+        const holes = await ctx.db
+          .query("courseHoles")
+          .withIndex("by_course", (q) => q.eq("courseId", course._id))
+          .collect();
+        const eventCount = allEvents.filter(
+          (e) => e.courseId === course._id
+        ).length;
+        return {
+          ...course,
+          holeDataComplete: holes.length === course.holes,
+          holesEntered: holes.length,
+          eventCount,
+        };
+      })
+    );
+
+    return results.sort((a, b) => a.name.localeCompare(b.name));
+  },
+});
+
 export const addCourseHoles = mutation({
   args: {
     courseId: v.id("courses"),

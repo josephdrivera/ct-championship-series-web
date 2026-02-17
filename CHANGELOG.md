@@ -6,6 +6,20 @@ in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-02-17
+
+### Added
+
+- Admin courses page at /admin/courses with full course and hole data management
+- Course creation form with fields: name, par, holes (default 18), location, description, latitude/longitude (optional)
+- Course list showing all courses with par, hole count, number of events played, and hole data status (Complete vs Pending)
+- Hole data entry form: table with rows per hole, each having pre-filled hole number, par dropdown (3/4/5), yardage input, and optional GPS coordinates (tee lat/lng, green lat/lng)
+- "Save All 18 Holes" button that calls addCourseHoles mutation with full array validation
+- Client-side validation ensuring all holes have par and yardage before saving
+- Pre-fill support for editing existing hole data (supports re-upload)
+- Total par and total yardage summary in table footer
+- New Convex query: getCoursesWithStats — returns all courses with hole data completion status and event count
+
 ## [0.10.1] - 2026-02-17
 
 ### Added

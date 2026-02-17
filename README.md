@@ -56,7 +56,7 @@ design theme.
 - [x] Prompt 8: Live spectator page with real-time leaderboard
 - [x] Prompt 9: Admin layout with auth guard and dashboard
 - [x] Prompt 10: Admin season and event management pages
-- [ ] Prompt 11
+- [x] Prompt 11: Admin course & hole data entry
 - [ ] Prompt 12
 - [ ] Prompt 13
 - [ ] Prompt 14
