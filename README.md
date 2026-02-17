@@ -34,7 +34,7 @@ design theme.
 ## Build Checklist
 
 - [x] Prompt 1: Project scaffold with Next.js + Tailwind Masters theme
-- [ ] Prompt 2
+- [x] Prompt 2: Convex schema and database setup
 - [ ] Prompt 3
 - [ ] Prompt 4
 - [ ] Prompt 5

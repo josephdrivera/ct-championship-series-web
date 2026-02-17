@@ -6,6 +6,16 @@ in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-02-17
+
+### Added
+
+- Convex schema with 13 tables: users, seasons, events, courses, courseHoles, scores, standings, achievements, headToHead, liveRounds, holeScores, messages, photos
+- 23 database indexes for efficient querying across all tables
+- Typed validators with union types for status and format fields
+- Table references via v.id() for relational integrity
+- Convex file storage reference (v.id("_storage")) for photos table
+
 ## [0.1.0] - 2026-02-17
 
 ### Added
