@@ -6,6 +6,27 @@ in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-02-17
+
+### Added
+
+- Shared auth helpers (convex/helpers.ts): getCurrentUserOrNull, requireUser, requireCommissioner
+- Points calculation engine with tie-averaging, major 2x multiplier, and DNF handling (100/85/72/62/54/48/43/39/36/33/30 point scale)
+- Standings recalculation helper that rebuilds rankings from all event scores
+- Season queries: getActiveSeason, getChampionHistory
+- Season mutation: createSeason (commissioner-only, duplicate year prevention)
+- Event query: getUpcomingEvents (with course join, date-sorted)
+- Event mutations: createEvent, updateEvent (commissioner-only, auto-multiplier for majors)
+- Course queries: getAllCourses, getCourseHoles (sorted by hole number)
+- Course mutations: createCourse, addCourseHoles (accepts 18-hole array, supports re-upload)
+- Score query: getEventScores (with user data, sorted by position)
+- Score mutations: submitScore (duplicate prevention), calculateEventPoints (commissioner trigger)
+- Standings query: getSeasonStandings (pre-sorted by rank with user data)
+- Standings mutation: updateStandings (commissioner trigger for recalculation)
+- Live round queries: getActiveRounds, getLiveLeaderboard (real-time sorted by relToPar)
+- Round mutations: startRound, submitHoleScore (hole-by-hole with validation), completeRound (aggregates stats, writes scores, auto-triggers points when all rounds done)
+- Player queries: getAllPlayers (name-sorted), getPlayerProfile (aggregated stats, recent scores, achievements), getHeadToHead (canonical ID ordering, cross-season aggregation)
+
 ## [0.3.0] - 2026-02-17
 
 ### Added

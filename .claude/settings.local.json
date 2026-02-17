@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/josephrivera/Desktop/Web/**)",
+      "Bash(git -C /Users/josephrivera/Desktop/Web Dev/ct-championship-series-web log --oneline)",
+      "Bash(git -C /Users/josephrivera/Desktop/Web Dev/ct-championship-series-web branch -a)",
+      "Bash(git -C /Users/josephrivera/Desktop/Web Dev/ct-championship-series-web remote -v)",
+      "Bash(npm run build:*)",
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(test:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

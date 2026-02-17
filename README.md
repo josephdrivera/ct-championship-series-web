@@ -49,7 +49,7 @@ design theme.
 - [x] Prompt 1: Project scaffold with Next.js + Tailwind Masters theme
 - [x] Prompt 2: Convex schema and database setup
 - [x] Prompt 3: Clerk authentication with Convex user sync
-- [ ] Prompt 4
+- [x] Prompt 4: Convex server functions (queries + mutations)
 - [ ] Prompt 5
 - [ ] Prompt 6
 - [ ] Prompt 7
