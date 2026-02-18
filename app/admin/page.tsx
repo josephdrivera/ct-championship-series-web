@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { toast } from "sonner";
 
 function StatCard({
   label,
@@ -39,6 +40,26 @@ export default function AdminDashboard() {
     activeSeason ? { seasonId: activeSeason._id } : "skip"
   );
   const allPlayers = useQuery(api.players.getAllPlayers);
+  const toggleLiveMode = useMutation(api.seasons.toggleLiveMode);
+
+  const liveOverride = activeSeason?.liveOverride;
+  const isLiveOn = liveOverride === "on";
+  const isLiveOff = liveOverride === "off";
+  const isLiveAuto = !liveOverride;
+
+  const handleLiveToggle = async (mode: "on" | "off" | undefined) => {
+    if (!activeSeason) return;
+    try {
+      await toggleLiveMode({
+        seasonId: activeSeason._id,
+        liveOverride: mode,
+      });
+      const label = mode === "on" ? "ON" : mode === "off" ? "OFF" : "Auto";
+      toast.success(`Live mode set to ${label}`);
+    } catch {
+      toast.error("Failed to toggle live mode");
+    }
+  };
 
   return (
     <>
@@ -93,6 +114,65 @@ export default function AdminDashboard() {
           ))}
         </div>
       </div>
+
+      {/* Live Mode Toggle */}
+      {activeSeason && (
+        <div className="mt-10">
+          <h2 className="font-serif text-xl font-bold text-dark-green">
+            Live Mode
+          </h2>
+          <p className="mt-1 text-sm text-dark-green/60">
+            Control whether the home page shows the live leaderboard.
+          </p>
+          <div className="mt-4 inline-flex items-center gap-1 rounded-full bg-sand/50 p-1">
+            <button
+              onClick={() => handleLiveToggle("on")}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                isLiveOn
+                  ? "bg-red-600 text-white shadow-sm"
+                  : "text-dark-green/60 hover:text-dark-green"
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                {isLiveOn && (
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                  </span>
+                )}
+                On
+              </span>
+            </button>
+            <button
+              onClick={() => handleLiveToggle(undefined)}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                isLiveAuto
+                  ? "bg-white text-dark-green shadow-sm"
+                  : "text-dark-green/60 hover:text-dark-green"
+              }`}
+            >
+              Auto
+            </button>
+            <button
+              onClick={() => handleLiveToggle("off")}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                isLiveOff
+                  ? "bg-white text-dark-green shadow-sm"
+                  : "text-dark-green/60 hover:text-dark-green"
+              }`}
+            >
+              Off
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-dark-green/40">
+            {isLiveAuto
+              ? "Auto: Live mode activates when an event is in progress."
+              : isLiveOn
+                ? "Force ON: Home page shows live leaderboard now."
+                : "Force OFF: Live leaderboard is hidden even during events."}
+          </p>
+        </div>
+      )}
     </>
   );
 }

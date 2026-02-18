@@ -1,13 +1,13 @@
 import { mutation } from "./_generated/server";
 
 /**
- * Seeds the database with sample data for development.
- * Run from the Convex dashboard: Functions → seed → run
+ * Seeds the database with the 2026 CT Championship Series data.
+ * Run via CLI: npx convex run seed:seedData
  *
  * This will:
- * - Create sample courses (Connecticut golf courses)
- * - Create a 2026 season (active)
- * - Create sample events for the season
+ * - Create the 8 courses for the 2026 season
+ * - Create the 2026 season (active)
+ * - Create 8 monthly events (April–November)
  *
  * NOTE: This does NOT create users — users are created via Clerk webhook
  * when they sign in. To make yourself a super admin, run promoteSuperAdmin
@@ -16,20 +16,21 @@ import { mutation } from "./_generated/server";
 export const seedData = mutation({
   args: {},
   handler: async (ctx) => {
-    // Check if data already exists
     const existingCourses = await ctx.db.query("courses").collect();
     if (existingCourses.length > 0) {
-      throw new Error("Database already has data. Clear it first if you want to re-seed.");
+      throw new Error("Database already has data. Run seed:clearData first if you want to re-seed.");
     }
 
-    // Create courses
+    // 2026 CT Eight-Month Open course lineup
     const courses = [
-      { name: "Richter Park Golf Course", par: 72, holes: 18, location: "Danbury, CT" },
-      { name: "Sterling Farms Golf Course", par: 72, holes: 18, location: "Stamford, CT" },
-      { name: "Tashua Knolls Golf Course", par: 72, holes: 18, location: "Trumbull, CT" },
-      { name: "Whitney Farms Golf Course", par: 72, holes: 18, location: "Monroe, CT" },
-      { name: "Grassy Hill Country Club", par: 70, holes: 18, location: "Orange, CT" },
-      { name: "Hawk's Landing Country Club", par: 72, holes: 18, location: "Southington, CT" },
+      { name: "Keney Park Golf Course", par: 72, holes: 18, location: "Hartford, CT" },
+      { name: "Shennecossett Golf Course", par: 71, holes: 18, location: "Groton, CT" },
+      { name: "Oxford Greens Golf Club", par: 72, holes: 18, location: "Oxford, CT" },
+      { name: "Wintonbury Hills Golf Course", par: 72, holes: 18, location: "Bloomfield, CT" },
+      { name: "Blackledge CC - Anderson Course", par: 72, holes: 18, location: "Hebron, CT" },
+      { name: "Great River Golf Club", par: 72, holes: 18, location: "Milford, CT" },
+      { name: "Fox Hopyard Golf Club", par: 71, holes: 18, location: "East Haddam, CT" },
+      { name: "Lake of Isles - North Course", par: 72, holes: 18, location: "North Stonington, CT" },
     ];
 
     const courseIds = [];
@@ -41,20 +42,20 @@ export const seedData = mutation({
     // Create 2026 season
     const seasonId = await ctx.db.insert("seasons", {
       year: 2026,
-      name: "2026 Championship Season",
+      name: "The Connecticut Eight-Month Open",
       status: "active",
     });
 
-    // Create events for the season
+    // Monthly events April through November
     const events = [
-      { name: "Opening Day Classic", courseIdx: 0, date: "2026-04-18", format: "stroke" as const, isMajor: false, eventNumber: 1 },
-      { name: "Spring Invitational", courseIdx: 1, date: "2026-05-16", format: "stroke" as const, isMajor: false, eventNumber: 2 },
-      { name: "Memorial Tournament", courseIdx: 2, date: "2026-06-20", format: "stroke" as const, isMajor: true, eventNumber: 3 },
-      { name: "Midsummer Classic", courseIdx: 3, date: "2026-07-18", format: "bestBall" as const, isMajor: false, eventNumber: 4 },
-      { name: "CT Open", courseIdx: 4, date: "2026-08-15", format: "stroke" as const, isMajor: true, eventNumber: 5 },
-      { name: "Fall Championship", courseIdx: 5, date: "2026-09-19", format: "stroke" as const, isMajor: false, eventNumber: 6 },
-      { name: "Season Finale", courseIdx: 0, date: "2026-10-17", format: "stroke" as const, isMajor: false, eventNumber: 7 },
-      { name: "Tour Championship", courseIdx: 1, date: "2026-11-07", format: "stroke" as const, isMajor: true, eventNumber: 8 },
+      { name: "April at Keney Park", courseIdx: 0, date: "2026-04-18", format: "stroke" as const, isMajor: false, eventNumber: 1 },
+      { name: "May at Shennecossett", courseIdx: 1, date: "2026-05-16", format: "stroke" as const, isMajor: false, eventNumber: 2 },
+      { name: "June at Oxford Greens", courseIdx: 2, date: "2026-06-20", format: "stroke" as const, isMajor: false, eventNumber: 3 },
+      { name: "July at Wintonbury Hills", courseIdx: 3, date: "2026-07-18", format: "stroke" as const, isMajor: false, eventNumber: 4 },
+      { name: "August at Blackledge", courseIdx: 4, date: "2026-08-15", format: "stroke" as const, isMajor: true, eventNumber: 5 },
+      { name: "September at Great River", courseIdx: 5, date: "2026-09-19", format: "stroke" as const, isMajor: false, eventNumber: 6 },
+      { name: "October at Fox Hopyard", courseIdx: 6, date: "2026-10-17", format: "stroke" as const, isMajor: false, eventNumber: 7 },
+      { name: "November at Lake of Isles", courseIdx: 7, date: "2026-11-07", format: "stroke" as const, isMajor: true, eventNumber: 8 },
     ];
 
     for (const ev of events) {
@@ -76,14 +77,55 @@ export const seedData = mutation({
 });
 
 /**
- * Promotes a user to super admin by their Clerk ID.
- * Run from the Convex dashboard: Functions → seed:promoteSuperAdmin → run
- * Pass your Clerk user ID (found in Clerk Dashboard → Users).
+ * Clears all seeded data (courses, seasons, events, scores, standings, rounds).
+ * Run via CLI: npx convex run seed:clearData
+ * Does NOT delete users.
+ */
+export const clearData = mutation({
+  args: {},
+  handler: async (ctx) => {
+    let totalDeleted = 0;
+
+    const holeScoresDocs = await ctx.db.query("holeScores").collect();
+    for (const doc of holeScoresDocs) await ctx.db.delete(doc._id);
+    totalDeleted += holeScoresDocs.length;
+
+    const liveRoundsDocs = await ctx.db.query("liveRounds").collect();
+    for (const doc of liveRoundsDocs) await ctx.db.delete(doc._id);
+    totalDeleted += liveRoundsDocs.length;
+
+    const scores = await ctx.db.query("scores").collect();
+    for (const doc of scores) await ctx.db.delete(doc._id);
+    totalDeleted += scores.length;
+
+    const standingsDocs = await ctx.db.query("standings").collect();
+    for (const doc of standingsDocs) await ctx.db.delete(doc._id);
+    totalDeleted += standingsDocs.length;
+
+    const eventsDocs = await ctx.db.query("events").collect();
+    for (const doc of eventsDocs) await ctx.db.delete(doc._id);
+    totalDeleted += eventsDocs.length;
+
+    const coursesDocs = await ctx.db.query("courses").collect();
+    for (const doc of coursesDocs) await ctx.db.delete(doc._id);
+    totalDeleted += coursesDocs.length;
+
+    const seasonsDocs = await ctx.db.query("seasons").collect();
+    for (const doc of seasonsDocs) await ctx.db.delete(doc._id);
+    totalDeleted += seasonsDocs.length;
+
+    return { totalDeleted };
+  },
+});
+
+/**
+ * Promotes the first user to super admin.
+ * Run via CLI: npx convex run seed:promoteSuperAdmin
+ * Sign in first to create your user.
  */
 export const promoteSuperAdmin = mutation({
   args: {},
   handler: async (ctx) => {
-    // Find the first user and make them super admin
     const users = await ctx.db.query("users").collect();
     if (users.length === 0) {
       throw new Error("No users found. Sign in first to create your user.");

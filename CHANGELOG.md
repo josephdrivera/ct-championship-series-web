@@ -6,6 +6,50 @@ in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-02-17
+
+### Added
+
+- Redesigned landing page with Masters-inspired hero section featuring dark green to midnight gradient, gold-accented "The Championship Series" heading in Playfair Display, and tagline
+- CTA buttons: gold "View Leaderboard" and outline "Sign In"
+- Live mini-leaderboard showing top 3 players with points, wins, and scoring average (real-time from Convex)
+- Next upcoming event card with major badge, course name, format, date, and live countdown timer
+- Recent results section showing last 2-3 completed events with links to detail pages
+- Framer Motion staggered fade-up entry animations on hero load and content sections on scroll
+- SSR preloading via Convex preloadQuery for season, standings, and events data
+- Graceful fallback when no active season exists
+- Mobile-first responsive design with breakpoints for tablet and desktop
+
+### Changed
+
+- Split app/page.tsx into server component (SSR data preloading) and HomeContent.tsx client component (animations, countdown timer, real-time data)
+
+## [0.13.0] - 2026-02-17
+
+### Added
+
+- Enhanced admin players page with full player management capabilities
+- Player cards now display join year, handicap, role badge, and events played count
+- Inline edit form per player: update name, handicap, and commissioner toggle (super admin only)
+- "Update All Handicaps" bulk mode: table view for adjusting all player handicaps at once before the next event
+- New Convex mutation: updatePlayer — commissioner-only mutation to update player name and handicap
+- New Convex mutation: bulkUpdateHandicaps — commissioner-only mutation for batch handicap updates
+- New Convex query: getPlayersWithStats — returns all players with aggregated events played count
+
+## [0.12.0] - 2026-02-17
+
+### Added
+
+- Admin score entry page at /admin/scores with event selector, bulk score entry table, and points preview
+- Event selector dropdown filters to active and completed events in the current season, showing event number, name, course, date, and major status
+- Score entry table displays all league players with columns: Player Name, Handicap (pre-filled from user record, editable), Gross Score, Net Score (auto-calculated), Birdies, Eagles, Pars, Bogeys, Double+, Pickups
+- Client-side points preview that mirrors the backend calculation algorithm with tie-averaging and major multiplier support
+- "Submit All Scores" button that calls adminSubmitScore for each player then triggers calculateEventPoints for automatic point assignment and standings recalculation
+- "Recalculate Points" button for corrections on events that already have scores
+- Event leaderboard display after submission showing final positions, scores, and points earned
+- Pre-fill support for editing existing scores (upsert behavior enables corrections workflow)
+- New Convex mutation: adminSubmitScore — commissioner-only mutation to submit scores on behalf of any player with upsert behavior (insert or update existing)
+
 ## [0.11.0] - 2026-02-17
 
 ### Added

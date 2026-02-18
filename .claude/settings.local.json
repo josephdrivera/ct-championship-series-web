@@ -12,7 +12,10 @@
       "Bash(git checkout:*)",
       "Bash(npx tsc:*)",
       "Bash(npx next build:*)",
-      "Bash(npx convex env set:*)"
+      "Bash(npx convex env set:*)",
+      "WebFetch(domain:unsplash.com)",
+      "Bash(curl:*)",
+      "Bash(npx convex run:*)"
     ]
   }
 }

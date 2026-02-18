@@ -271,6 +271,7 @@ function CreateCourseForm({
   const [description, setDescription] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
+  const [heroImage, setHeroImage] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -301,6 +302,7 @@ function CreateCourseForm({
         ...(description.trim() ? { description: description.trim() } : {}),
         ...(latitude ? { latitude: parseFloat(latitude) } : {}),
         ...(longitude ? { longitude: parseFloat(longitude) } : {}),
+        ...(heroImage.trim() ? { heroImage: heroImage.trim() } : {}),
       });
       toast.success(`Course "${name.trim()}" created`);
       const holeCount = parseInt(holes, 10);
@@ -312,6 +314,7 @@ function CreateCourseForm({
       setDescription("");
       setLatitude("");
       setLongitude("");
+      setHeroImage("");
       onCreated(courseId, courseName, holeCount);
     } catch (err) {
       toast.error(
@@ -471,6 +474,28 @@ function CreateCourseForm({
               className="mt-1 w-full rounded-lg border border-sand bg-white px-4 py-2.5 text-sm text-dark-green placeholder:text-dark-green/40 focus:border-augusta focus:outline-none focus:ring-1 focus:ring-augusta"
             />
           </div>
+
+          {/* Hero Image URL */}
+          <div className="sm:col-span-2">
+            <label
+              htmlFor="course-hero"
+              className="block text-sm font-medium text-dark-green"
+            >
+              Hero Image URL{" "}
+              <span className="text-dark-green/40">(optional)</span>
+            </label>
+            <input
+              id="course-hero"
+              type="url"
+              value={heroImage}
+              onChange={(e) => setHeroImage(e.target.value)}
+              placeholder="https://images.unsplash.com/photo-..."
+              className="mt-1 w-full rounded-lg border border-sand bg-white px-4 py-2.5 text-sm text-dark-green placeholder:text-dark-green/40 focus:border-augusta focus:outline-none focus:ring-1 focus:ring-augusta"
+            />
+            <p className="mt-1 text-xs text-dark-green/40">
+              Shown as the landing page hero when this course hosts the next event.
+            </p>
+          </div>
         </div>
 
         <div className="pt-2">
@@ -490,8 +515,59 @@ function CreateCourseForm({
 /* ------------------------------------------------------------------ */
 /*  Main Page                                                          */
 /* ------------------------------------------------------------------ */
+function HeroImageEditor({
+  courseId,
+  currentUrl,
+}: {
+  courseId: Id<"courses">;
+  currentUrl?: string;
+}) {
+  const [url, setUrl] = useState(currentUrl ?? "");
+  const [saving, setSaving] = useState(false);
+  const updateCourse = useMutation(api.courses.updateCourse);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await updateCourse({ courseId, heroImage: url.trim() || undefined });
+      toast.success("Hero image updated");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update"
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="mt-3 border-t border-sand/50 pt-3">
+      <label className="block text-xs font-medium text-dark-green/60">
+        Hero Image URL
+      </label>
+      <div className="mt-1 flex gap-2">
+        <input
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://images.unsplash.com/photo-..."
+          className="flex-1 rounded-lg border border-sand bg-white px-3 py-1.5 text-xs text-dark-green placeholder:text-dark-green/30 focus:border-augusta focus:outline-none focus:ring-1 focus:ring-augusta"
+        />
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="rounded-full bg-augusta px-3 py-1.5 text-xs font-semibold text-cream transition-colors hover:bg-deep-green disabled:opacity-50"
+        >
+          {saving ? "..." : "Save"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminCoursesPage() {
   const courses = useQuery(api.courses.getCoursesWithStats);
+  const [editingHeroId, setEditingHeroId] = useState<string | null>(null);
   const [holeEntry, setHoleEntry] = useState<{
     courseId: Id<"courses">;
     courseName: string;
@@ -582,23 +658,44 @@ export default function AdminCoursesPage() {
                     )}
                   </div>
 
-                  <button
-                    onClick={() =>
-                      setHoleEntry({
-                        courseId: course._id,
-                        courseName: course.name,
-                        holeCount: course.holes,
-                      })
-                    }
-                    className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
-                      course.holeDataComplete
-                        ? "bg-dark-green/10 text-dark-green hover:bg-dark-green/20"
-                        : "bg-augusta text-cream hover:bg-deep-green"
-                    }`}
-                  >
-                    {course.holeDataComplete ? "Edit Holes" : "Enter Holes"}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() =>
+                        setEditingHeroId(
+                          editingHeroId === (course._id as string)
+                            ? null
+                            : (course._id as string)
+                        )
+                      }
+                      className="rounded-full bg-dark-green/10 px-3 py-1.5 text-xs font-medium text-dark-green hover:bg-dark-green/20"
+                    >
+                      {course.heroImage ? "Edit Image" : "Add Image"}
+                    </button>
+                    <button
+                      onClick={() =>
+                        setHoleEntry({
+                          courseId: course._id,
+                          courseName: course.name,
+                          holeCount: course.holes,
+                        })
+                      }
+                      className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
+                        course.holeDataComplete
+                          ? "bg-dark-green/10 text-dark-green hover:bg-dark-green/20"
+                          : "bg-augusta text-cream hover:bg-deep-green"
+                      }`}
+                    >
+                      {course.holeDataComplete ? "Edit Holes" : "Enter Holes"}
+                    </button>
+                  </div>
                 </div>
+
+                {editingHeroId === (course._id as string) && (
+                  <HeroImageEditor
+                    courseId={course._id}
+                    currentUrl={course.heroImage}
+                  />
+                )}
               </div>
             ))}
           </div>

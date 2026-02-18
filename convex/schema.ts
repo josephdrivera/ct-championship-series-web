@@ -21,6 +21,7 @@ export default defineSchema({
       v.literal("completed")
     ),
     championId: v.optional(v.id("users")),
+    liveOverride: v.optional(v.union(v.literal("on"), v.literal("off"))),
   })
     .index("by_year", ["year"])
     .index("by_status", ["status"]),
@@ -60,6 +61,7 @@ export default defineSchema({
     description: v.optional(v.string()),
     latitude: v.optional(v.number()),
     longitude: v.optional(v.number()),
+    heroImage: v.optional(v.string()),
   }),
 
   courseHoles: defineTable({

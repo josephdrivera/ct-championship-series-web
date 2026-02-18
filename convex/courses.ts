@@ -30,10 +30,40 @@ export const createCourse = mutation({
     description: v.optional(v.string()),
     latitude: v.optional(v.number()),
     longitude: v.optional(v.number()),
+    heroImage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await requireCommissioner(ctx);
     return await ctx.db.insert("courses", args);
+  },
+});
+
+export const updateCourse = mutation({
+  args: {
+    courseId: v.id("courses"),
+    name: v.optional(v.string()),
+    par: v.optional(v.number()),
+    holes: v.optional(v.number()),
+    location: v.optional(v.string()),
+    description: v.optional(v.string()),
+    latitude: v.optional(v.number()),
+    longitude: v.optional(v.number()),
+    heroImage: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await requireCommissioner(ctx);
+    const { courseId, ...updates } = args;
+    const course = await ctx.db.get(courseId);
+    if (!course) throw new Error("Course not found");
+
+    const patch: Record<string, string | number> = {};
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== undefined) patch[key] = value;
+    }
+
+    if (Object.keys(patch).length > 0) {
+      await ctx.db.patch(courseId, patch);
+    }
   },
 });
 

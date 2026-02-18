@@ -77,10 +77,270 @@ function InviteForm() {
   );
 }
 
+function EditPlayerForm({
+  player,
+  isSuperAdmin,
+  isCurrentUser,
+  onClose,
+}: {
+  player: {
+    _id: Id<"users">;
+    name: string;
+    handicap?: number;
+    isCommissioner: boolean;
+  };
+  isSuperAdmin: boolean;
+  isCurrentUser: boolean;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState(player.name);
+  const [handicap, setHandicap] = useState(
+    player.handicap !== undefined ? String(player.handicap) : ""
+  );
+  const [isCommissioner, setIsCommissioner] = useState(player.isCommissioner);
+  const [submitting, setSubmitting] = useState(false);
+
+  const updatePlayer = useMutation(api.users.updatePlayer);
+  const updateUserRole = useMutation(api.users.updateUserRole);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) {
+      toast.error("Name is required");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await updatePlayer({
+        userId: player._id,
+        name: name.trim(),
+        ...(handicap !== "" ? { handicap: parseInt(handicap, 10) || 0 } : {}),
+      });
+
+      // Update role if super admin changed it (and not editing self)
+      if (
+        isSuperAdmin &&
+        !isCurrentUser &&
+        isCommissioner !== player.isCommissioner
+      ) {
+        await updateUserRole({
+          userId: player._id,
+          isCommissioner,
+        });
+      }
+
+      toast.success("Player updated");
+      onClose();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update player"
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={handleSave}
+      className="mt-4 border-t border-sand/50 pt-4"
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="block text-sm font-medium text-dark-green">
+            Name
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-sand bg-white px-4 py-2.5 text-sm text-dark-green placeholder:text-dark-green/40 focus:border-augusta focus:outline-none focus:ring-1 focus:ring-augusta"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-dark-green">
+            Handicap
+          </label>
+          <input
+            type="number"
+            value={handicap}
+            onChange={(e) => setHandicap(e.target.value)}
+            placeholder="Not set"
+            className="mt-1 w-full rounded-lg border border-sand bg-white px-4 py-2.5 text-sm text-dark-green placeholder:text-dark-green/40 focus:border-augusta focus:outline-none focus:ring-1 focus:ring-augusta"
+          />
+        </div>
+      </div>
+
+      {isSuperAdmin && !isCurrentUser && (
+        <label className="mt-4 flex items-center gap-3 rounded-lg border border-sand px-4 py-2.5">
+          <input
+            type="checkbox"
+            checked={isCommissioner}
+            onChange={(e) => setIsCommissioner(e.target.checked)}
+            className="h-4 w-4 rounded border-sand text-augusta focus:ring-augusta"
+          />
+          <span className="text-sm font-medium text-dark-green">
+            Commissioner
+          </span>
+        </label>
+      )}
+
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded-full bg-augusta px-5 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-deep-green disabled:opacity-50"
+        >
+          {submitting ? "Saving..." : "Save Changes"}
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-full bg-sand px-5 py-2.5 text-sm font-semibold text-dark-green/70 transition-colors hover:bg-sand/80"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function BulkHandicapTable({
+  players,
+  onClose,
+}: {
+  players: { _id: Id<"users">; name: string; handicap?: number }[];
+  onClose: () => void;
+}) {
+  const [handicaps, setHandicaps] = useState<Map<string, string>>(() => {
+    const map = new Map<string, string>();
+    for (const p of players) {
+      map.set(
+        p._id as string,
+        p.handicap !== undefined ? String(p.handicap) : ""
+      );
+    }
+    return map;
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  const bulkUpdateHandicaps = useMutation(api.users.bulkUpdateHandicaps);
+
+  async function handleSave() {
+    const updates: { userId: Id<"users">; handicap: number }[] = [];
+    for (const player of players) {
+      const val = handicaps.get(player._id as string) ?? "";
+      const newHandicap = parseInt(val, 10);
+      if (!isNaN(newHandicap) && newHandicap !== (player.handicap ?? -1)) {
+        updates.push({ userId: player._id, handicap: newHandicap });
+      }
+    }
+
+    if (updates.length === 0) {
+      toast("No handicap changes to save");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await bulkUpdateHandicaps({ updates });
+      toast.success(`Updated handicaps for ${updates.length} player(s)`);
+      onClose();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update handicaps"
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const inputClass =
+    "w-20 rounded-lg border border-sand bg-white px-3 py-1.5 text-center text-sm text-dark-green focus:border-augusta focus:outline-none focus:ring-1 focus:ring-augusta";
+
+  return (
+    <div className="mt-4 rounded-xl bg-white p-6 shadow-sm">
+      <div className="flex items-center justify-between">
+        <h2 className="font-serif text-lg font-bold text-dark-green">
+          Update All Handicaps
+        </h2>
+        <button
+          onClick={onClose}
+          className="rounded-full bg-sand px-4 py-2 text-xs font-medium text-dark-green/70 transition-colors hover:bg-sand/80"
+        >
+          Cancel
+        </button>
+      </div>
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-sand text-left">
+              <th className="px-3 py-2 font-semibold text-dark-green">
+                Player
+              </th>
+              <th className="px-3 py-2 text-center font-semibold text-dark-green">
+                Current HCP
+              </th>
+              <th className="px-3 py-2 text-center font-semibold text-dark-green">
+                New HCP
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {players.map((player, idx) => (
+              <tr
+                key={player._id}
+                className={`border-b border-sand/50 ${
+                  idx % 2 === 0 ? "bg-cream/50" : ""
+                }`}
+              >
+                <td className="px-3 py-2 font-medium text-dark-green">
+                  {player.name}
+                </td>
+                <td className="px-3 py-2 text-center text-dark-green/60">
+                  {player.handicap ?? "—"}
+                </td>
+                <td className="px-3 py-2 text-center">
+                  <input
+                    type="number"
+                    value={handicaps.get(player._id as string) ?? ""}
+                    onChange={(e) =>
+                      setHandicaps((prev) => {
+                        const copy = new Map(prev);
+                        copy.set(player._id as string, e.target.value);
+                        return copy;
+                      })
+                    }
+                    placeholder="—"
+                    className={inputClass}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-4">
+        <button
+          onClick={handleSave}
+          disabled={submitting}
+          className="rounded-full bg-augusta px-5 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-deep-green disabled:opacity-50"
+        >
+          {submitting ? "Saving..." : "Save All Handicaps"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPlayersPage() {
-  const players = useQuery(api.players.getAllPlayers);
+  const players = useQuery(api.players.getPlayersWithStats);
   const currentUser = useQuery(api.users.getCurrentUser);
   const updateUserRole = useMutation(api.users.updateUserRole);
+
+  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
+  const [bulkHandicapMode, setBulkHandicapMode] = useState(false);
 
   const isSuperAdmin = currentUser?.isSuperAdmin === true;
 
@@ -108,7 +368,6 @@ export default function AdminPlayersPage() {
       await updateUserRole({
         userId,
         isSuperAdmin: !currentValue,
-        // Super admins are also commissioners
         ...(!currentValue ? { isCommissioner: true } : {}),
       });
       toast.success(
@@ -129,7 +388,7 @@ export default function AdminPlayersPage() {
         Players
       </h1>
       <p className="mt-1 text-dark-green/60">
-        Manage league members and roles.
+        Manage league members, handicaps, and roles.
       </p>
 
       {/* Invite form - super admins only */}
@@ -139,11 +398,31 @@ export default function AdminPlayersPage() {
         </div>
       )}
 
+      {/* Bulk handicap mode */}
+      {bulkHandicapMode && players && (
+        <div className="mt-8">
+          <BulkHandicapTable
+            players={players}
+            onClose={() => setBulkHandicapMode(false)}
+          />
+        </div>
+      )}
+
       {/* Players list */}
       <div className="mt-8">
-        <h2 className="font-serif text-lg font-bold text-dark-green">
-          All Players
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-serif text-lg font-bold text-dark-green">
+            All Players
+          </h2>
+          {!bulkHandicapMode && players && players.length > 0 && (
+            <button
+              onClick={() => setBulkHandicapMode(true)}
+              className="rounded-full bg-sand px-4 py-2 text-xs font-medium text-dark-green/70 transition-colors hover:bg-dark-green/10"
+            >
+              Update All Handicaps
+            </button>
+          )}
+        </div>
 
         {players === undefined ? (
           <p className="mt-4 text-sm text-dark-green/60">Loading...</p>
@@ -157,6 +436,7 @@ export default function AdminPlayersPage() {
           <div className="mt-4 space-y-3">
             {players.map((player) => {
               const isCurrentUser = player._id === currentUser?._id;
+              const isEditing = editingPlayerId === (player._id as string);
               const initials = player.name
                 .split(" ")
                 .map((n) => n[0])
@@ -196,7 +476,7 @@ export default function AdminPlayersPage() {
                             </span>
                           )}
                         </div>
-                        <div className="mt-0.5 flex items-center gap-2">
+                        <div className="mt-0.5 flex flex-wrap items-center gap-2">
                           {player.isSuperAdmin && (
                             <RoleBadge
                               label="Super Admin"
@@ -220,50 +500,79 @@ export default function AdminPlayersPage() {
                               HCP {player.handicap}
                             </span>
                           )}
+                          <span className="text-xs text-dark-green/50">
+                            Joined {player.joinedYear}
+                          </span>
+                          <span className="text-xs text-dark-green/50">
+                            {player.eventsPlayed} event{player.eventsPlayed !== 1 ? "s" : ""} played
+                          </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Role controls - super admins only, can't edit self */}
-                    {isSuperAdmin && !isCurrentUser && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() =>
-                            handleToggleCommissioner(
-                              player._id,
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
+                      {/* Role controls - super admins only, can't edit self */}
+                      {isSuperAdmin && !isCurrentUser && (
+                        <>
+                          <button
+                            onClick={() =>
+                              handleToggleCommissioner(
+                                player._id,
+                                player.isCommissioner
+                              )
+                            }
+                            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                               player.isCommissioner
-                            )
-                          }
-                          className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                            player.isCommissioner
-                              ? "bg-gold/20 text-gold-dark hover:bg-gold/30"
-                              : "bg-sand text-dark-green/60 hover:bg-dark-green/10"
-                          }`}
-                        >
-                          {player.isCommissioner
-                            ? "Remove Commissioner"
-                            : "Make Commissioner"}
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleToggleSuperAdmin(
-                              player._id,
-                              player.isSuperAdmin === true
-                            )
-                          }
-                          className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                            player.isSuperAdmin
-                              ? "bg-azalea/20 text-azalea hover:bg-azalea/30"
-                              : "bg-sand text-dark-green/60 hover:bg-dark-green/10"
-                          }`}
-                        >
-                          {player.isSuperAdmin
-                            ? "Remove Super Admin"
-                            : "Make Super Admin"}
-                        </button>
-                      </div>
-                    )}
+                                ? "bg-gold/20 text-gold-dark hover:bg-gold/30"
+                                : "bg-sand text-dark-green/60 hover:bg-dark-green/10"
+                            }`}
+                          >
+                            {player.isCommissioner
+                              ? "Remove Commissioner"
+                              : "Make Commissioner"}
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleToggleSuperAdmin(
+                                player._id,
+                                player.isSuperAdmin === true
+                              )
+                            }
+                            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                              player.isSuperAdmin
+                                ? "bg-azalea/20 text-azalea hover:bg-azalea/30"
+                                : "bg-sand text-dark-green/60 hover:bg-dark-green/10"
+                            }`}
+                          >
+                            {player.isSuperAdmin
+                              ? "Remove Super Admin"
+                              : "Make Super Admin"}
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={() =>
+                          setEditingPlayerId(
+                            isEditing ? null : (player._id as string)
+                          )
+                        }
+                        className="rounded-full bg-dark-green/10 px-3 py-1.5 text-xs font-medium text-dark-green hover:bg-dark-green/20"
+                      >
+                        {isEditing ? "Close" : "Edit"}
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Inline edit form */}
+                  {isEditing && (
+                    <EditPlayerForm
+                      player={player}
+                      isSuperAdmin={isSuperAdmin}
+                      isCurrentUser={isCurrentUser}
+                      onClose={() => setEditingPlayerId(null)}
+                    />
+                  )}
                 </div>
               );
             })}

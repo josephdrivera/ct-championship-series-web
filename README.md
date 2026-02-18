@@ -57,9 +57,9 @@ design theme.
 - [x] Prompt 9: Admin layout with auth guard and dashboard
 - [x] Prompt 10: Admin season and event management pages
 - [x] Prompt 11: Admin course & hole data entry
-- [ ] Prompt 12
-- [ ] Prompt 13
-- [ ] Prompt 14
+- [x] Prompt 12: Admin score entry & points calculation
+- [x] Prompt 13: Admin player management with edit forms and bulk handicap updates
+- [x] Prompt 14: Landing page with hero, mini-leaderboard, upcoming event, and recent results
 - [ ] Prompt 15
 - [ ] Prompt 16
 - [ ] Prompt 17

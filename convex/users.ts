@@ -1,6 +1,6 @@
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
-import { requireSuperAdmin } from "./helpers";
+import { requireSuperAdmin, requireCommissioner } from "./helpers";
 
 export const getCurrentUser = query({
   args: {},
@@ -41,6 +41,46 @@ export const updateUserRole = mutation({
     if (args.isSuperAdmin !== undefined) patch.isSuperAdmin = args.isSuperAdmin;
 
     await ctx.db.patch(args.userId, patch);
+  },
+});
+
+export const updatePlayer = mutation({
+  args: {
+    userId: v.id("users"),
+    name: v.optional(v.string()),
+    handicap: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    await requireCommissioner(ctx);
+
+    const user = await ctx.db.get(args.userId);
+    if (!user) throw new Error("User not found");
+
+    const updates: Record<string, string | number> = {};
+    if (args.name !== undefined) updates.name = args.name;
+    if (args.handicap !== undefined) updates.handicap = args.handicap;
+
+    if (Object.keys(updates).length > 0) {
+      await ctx.db.patch(args.userId, updates);
+    }
+  },
+});
+
+export const bulkUpdateHandicaps = mutation({
+  args: {
+    updates: v.array(
+      v.object({
+        userId: v.id("users"),
+        handicap: v.number(),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    await requireCommissioner(ctx);
+
+    for (const { userId, handicap } of args.updates) {
+      await ctx.db.patch(userId, { handicap });
+    }
   },
 });
 

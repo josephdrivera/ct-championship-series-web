@@ -9,6 +9,26 @@ export const getAllPlayers = query({
   },
 });
 
+export const getPlayersWithStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const users = await ctx.db.query("users").collect();
+    const allScores = await ctx.db.query("scores").collect();
+
+    const eventsMap = new Map<string, number>();
+    for (const score of allScores) {
+      eventsMap.set(
+        score.userId as string,
+        (eventsMap.get(score.userId as string) ?? 0) + 1
+      );
+    }
+
+    return users
+      .map((u) => ({ ...u, eventsPlayed: eventsMap.get(u._id as string) ?? 0 }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  },
+});
+
 export const getPlayerProfile = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {

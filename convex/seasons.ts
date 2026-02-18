@@ -91,3 +91,20 @@ export const updateSeason = mutation({
     await ctx.db.patch(seasonId, patch);
   },
 });
+
+export const toggleLiveMode = mutation({
+  args: {
+    seasonId: v.id("seasons"),
+    liveOverride: v.optional(v.union(v.literal("on"), v.literal("off"))),
+  },
+  handler: async (ctx, args) => {
+    await requireCommissioner(ctx);
+
+    const season = await ctx.db.get(args.seasonId);
+    if (!season) throw new Error("Season not found");
+
+    await ctx.db.patch(args.seasonId, {
+      liveOverride: args.liveOverride,
+    });
+  },
+});
