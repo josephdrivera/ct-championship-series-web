@@ -73,8 +73,14 @@ function HoleByHoleScorecard({
 
   if (!holeScores) {
     return (
-      <div className="px-4 py-3 text-center text-sm text-cream/40">
-        Loading scorecard...
+      <div className="space-y-2 px-4 py-3">
+        {[...Array(9)].map((_, i) => (
+          <div key={i} className="flex items-center gap-3">
+            <div className="h-3.5 w-8 animate-pulse rounded bg-dark-green/30" />
+            <div className="h-3.5 flex-1 animate-pulse rounded bg-dark-green/30" />
+            <div className="h-3.5 w-10 animate-pulse rounded bg-dark-green/30" />
+          </div>
+        ))}
       </div>
     );
   }

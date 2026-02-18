@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
+import CookieBanner from "@/components/CookieBanner";
+import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
 
 const playfairDisplay = Playfair_Display({
@@ -20,6 +22,15 @@ export const metadata: Metadata = {
   title: "CT Championship Series",
   description:
     "The official tournament platform for the CT Championship Series golf league.",
+  manifest: "/manifest.json",
+  other: {
+    "theme-color": "#002E1F",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "CT Golf",
+  },
 };
 
 export default function RootLayout({
@@ -29,12 +40,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+      </head>
       <body
         className={`${playfairDisplay.variable} ${dmSans.variable} font-sans antialiased`}
       >
         <ConvexClientProvider>
           <Header />
           {children}
+          <CookieBanner />
+          <ServiceWorkerRegistrar />
         </ConvexClientProvider>
       </body>
     </html>

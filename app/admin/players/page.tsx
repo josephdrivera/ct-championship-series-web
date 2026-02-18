@@ -425,7 +425,17 @@ export default function AdminPlayersPage() {
         </div>
 
         {players === undefined ? (
-          <p className="mt-4 text-sm text-dark-green/60">Loading...</p>
+          <div className="mt-4 space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm">
+                <div className="h-10 w-10 animate-pulse rounded-full bg-augusta/10" />
+                <div className="flex-1">
+                  <div className="h-4 w-32 animate-pulse rounded bg-augusta/10" />
+                  <div className="mt-2 h-3 w-48 animate-pulse rounded bg-augusta/10" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : players.length === 0 ? (
           <div className="mt-4 rounded-xl bg-white p-8 text-center shadow-sm">
             <p className="text-dark-green/60">

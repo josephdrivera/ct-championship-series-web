@@ -576,7 +576,14 @@ export default function AdminScoresPage() {
 
       {/* Loading / empty states */}
       {activeSeason === undefined && (
-        <p className="mt-8 text-sm text-dark-green/60">Loading...</p>
+        <div className="mt-8 space-y-4">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="rounded-xl bg-white p-6 shadow-sm">
+              <div className="h-5 w-40 animate-pulse rounded bg-augusta/10" />
+              <div className="mt-4 h-10 w-full animate-pulse rounded bg-augusta/10" />
+            </div>
+          ))}
+        </div>
       )}
       {activeSeason === null && (
         <div className="mt-8 rounded-xl bg-white p-8 text-center shadow-sm">

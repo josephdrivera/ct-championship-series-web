@@ -153,7 +153,17 @@ export default function AdminSeasonsPage() {
         </h2>
 
         {seasons === undefined ? (
-          <p className="mt-4 text-sm text-dark-green/60">Loading...</p>
+          <div className="mt-4 space-y-4">
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="rounded-xl bg-white p-5 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="h-5 w-36 animate-pulse rounded bg-augusta/10" />
+                  <div className="h-5 w-20 animate-pulse rounded-full bg-augusta/10" />
+                </div>
+                <div className="mt-3 h-3.5 w-48 animate-pulse rounded bg-augusta/10" />
+              </div>
+            ))}
+          </div>
         ) : seasons.length === 0 ? (
           <div className="mt-4 rounded-xl bg-white p-8 text-center shadow-sm">
             <p className="text-dark-green/60">

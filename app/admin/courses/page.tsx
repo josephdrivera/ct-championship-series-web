@@ -614,7 +614,14 @@ export default function AdminCoursesPage() {
         </h2>
 
         {courses === undefined ? (
-          <p className="mt-4 text-sm text-dark-green/60">Loading...</p>
+          <div className="mt-4 space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="rounded-xl bg-white p-5 shadow-sm">
+                <div className="h-5 w-48 animate-pulse rounded bg-augusta/10" />
+                <div className="mt-3 h-3.5 w-72 animate-pulse rounded bg-augusta/10" />
+              </div>
+            ))}
+          </div>
         ) : courses.length === 0 ? (
           <div className="mt-4 rounded-xl bg-white p-8 text-center shadow-sm">
             <p className="text-dark-green/60">

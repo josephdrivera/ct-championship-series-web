@@ -6,6 +6,42 @@ in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2026-02-17
+
+### Added
+
+- Mobile hamburger menu in main header — nav collapses to a toggle button below `md:` breakpoint with slide-down menu panel, active page highlighting, and close-on-navigate behavior
+- PWA `manifest.json` with app name, theme colors, and 192/512px icons for Android installability
+- Service worker (`public/sw.js`) with network-first caching strategy for offline leaderboard access
+- Service worker registration via `ServiceWorkerRegistrar` client component
+- Cookie consent banner with privacy-preserving defaults — essential cookies only, no tracking, with link to privacy policy and Framer Motion slide-up animation
+- `/privacy` page with full privacy policy covering data collection, storage (Convex), cookies, and third-party sharing
+- `/terms` page with terms of service covering eligibility, account responsibilities, league rules, and limitation of liability
+- Reusable `components/Skeleton.tsx` with `SkeletonBlock`, `SkeletonAvatar`, `SkeletonText`, `SkeletonCard`, and `SkeletonTable` primitives in green/cream pulse animation tones
+- Apple touch icon and web app metadata in root layout
+
+### Changed
+
+- Replaced all "Loading..." text placeholders with animated skeleton pulse components across admin courses, players, scores, seasons pages, home page live leaderboard, and live spectator scorecard
+- Header navigation now hidden on mobile with hamburger toggle; desktop nav unchanged
+- Root layout now includes manifest link, theme-color meta, CookieBanner, and ServiceWorkerRegistrar
+
+## [0.15.0] - 2026-02-17
+
+### Added
+
+- League History & Hall of Fame page at `/history` with dark midnight background and gold typography trophy case aesthetic
+- Season champion cards for each completed year with gold-framed design showing champion photo, name, total points, wins, events played, and scoring average
+- Major winners section with responsive table (desktop) and stacked cards (mobile) showing event name, course, winner, and score
+- All-time records section with four stat cards: most career wins, lowest single round, most points in a season, most career birdies — each with record holder photo and context
+- Year-by-year past standings browser with dropdown season selector and lazy-loaded standings table via Convex `useQuery` with `"skip"` pattern
+- Three new Convex queries in `convex/history.ts`: `getChampionCards`, `getMajorWinners`, `getAllTimeRecords`
+- SSR preloading via `preloadQuery` for champions, major winners, records, and season list
+- Framer Motion staggered fade-up animations on hero and scroll-triggered section reveals
+- SEO metadata with Open Graph tags for the history page
+- Graceful empty states for all sections when no data is available
+- Mobile-first responsive design with breakpoints for tablet and desktop
+
 ## [0.14.0] - 2026-02-17
 
 ### Added

@@ -11,6 +11,7 @@
 import type * as courses from "../courses.js";
 import type * as events from "../events.js";
 import type * as helpers from "../helpers.js";
+import type * as history from "../history.js";
 import type * as http from "../http.js";
 import type * as players from "../players.js";
 import type * as rounds from "../rounds.js";
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   courses: typeof courses;
   events: typeof events;
   helpers: typeof helpers;
+  history: typeof history;
   http: typeof http;
   players: typeof players;
   rounds: typeof rounds;

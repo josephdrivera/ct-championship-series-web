@@ -128,7 +128,18 @@ function LiveLeaderboard({ eventId }: { eventId: Id<"events"> }) {
   const leaderboard = useQuery(api.rounds.getLiveLeaderboard, { eventId });
 
   if (leaderboard === undefined) {
-    return <p className="py-8 text-center text-sm text-dark-green/50">Loading live scores...</p>;
+    return (
+      <div className="space-y-3 py-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="flex items-center gap-4 px-3 py-2">
+            <div className="h-3.5 w-8 animate-pulse rounded bg-augusta/10" />
+            <div className="h-8 w-8 animate-pulse rounded-full bg-augusta/10" />
+            <div className="h-3.5 flex-1 animate-pulse rounded bg-augusta/10" />
+            <div className="h-3.5 w-12 animate-pulse rounded bg-augusta/10" />
+          </div>
+        ))}
+      </div>
+    );
   }
 
   if (leaderboard.length === 0) {

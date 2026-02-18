@@ -15,7 +15,8 @@
       "Bash(npx convex env set:*)",
       "WebFetch(domain:unsplash.com)",
       "Bash(curl:*)",
-      "Bash(npx convex run:*)"
+      "Bash(npx convex run:*)",
+      "Bash(node -e:*)"
     ]
   }
 }

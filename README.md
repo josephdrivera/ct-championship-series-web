@@ -60,7 +60,7 @@ design theme.
 - [x] Prompt 12: Admin score entry & points calculation
 - [x] Prompt 13: Admin player management with edit forms and bulk handicap updates
 - [x] Prompt 14: Landing page with hero, mini-leaderboard, upcoming event, and recent results
-- [ ] Prompt 15
-- [ ] Prompt 16
+- [x] Prompt 15: League History & Hall of Fame page with champions, major winners, all-time records, and past standings
+- [x] Prompt 16: Responsive design, PWA manifest, service worker, cookie banner, privacy/terms pages, and loading skeletons
 - [ ] Prompt 17
 - [ ] Prompt 18
