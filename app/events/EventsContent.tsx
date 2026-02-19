@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Preloaded, usePreloadedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
@@ -76,12 +77,25 @@ export default function EventsContent({
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
-            {events.map(({ event, course }) => (
+            {events.map(({ event, course, imageUrl }) => (
               <Link
                 key={event._id}
                 href={`/events/${event._id}`}
-                className="group rounded-2xl bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+                className="group overflow-hidden rounded-2xl bg-white shadow-sm transition-shadow hover:shadow-md"
               >
+                {/* Course photo */}
+                {imageUrl && (
+                  <div className="relative h-40 w-full overflow-hidden">
+                    <Image
+                      src={imageUrl}
+                      alt={`${course?.name ?? event.name}`}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </div>
+                )}
+                <div className="p-6">
                 {/* Top row: Event number label + badges */}
                 <div className="flex items-start justify-between gap-2">
                   <span className="text-xs font-semibold uppercase tracking-widest text-dark-green/40">
@@ -136,6 +150,7 @@ export default function EventsContent({
                   {course?.location && (
                     <span className="ml-auto">{course.location}</span>
                   )}
+                </div>
                 </div>
               </Link>
             ))}

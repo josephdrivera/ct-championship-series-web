@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Preloaded, usePreloadedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { formatPoints } from "@/lib/format";
 import {
   AreaChart,
   Area,
@@ -171,7 +172,7 @@ export default function PlayerProfileContent({
 
         {/* Stats Grid */}
         <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3">
-          <StatCard label="Total Points" value={stats.totalPoints} />
+          <StatCard label="Total Points" value={formatPoints(stats.totalPoints)} />
           <StatCard
             label="Avg Score"
             value={stats.avgScore > 0 ? stats.avgScore.toFixed(1) : "\u2014"}
@@ -367,7 +368,7 @@ export default function PlayerProfileContent({
                       <div className="text-center">
                         <p className="font-semibold text-dark-green">
                           {score.pointsEarned > 0
-                            ? score.pointsEarned
+                            ? formatPoints(score.pointsEarned)
                             : "\u2014"}
                         </p>
                         <p className="text-xs text-dark-green/50">Pts</p>

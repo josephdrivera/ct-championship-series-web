@@ -2,6 +2,14 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireCommissioner } from "./helpers";
 
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    await requireCommissioner(ctx);
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
 export const getUpcomingEvents = query({
   args: { seasonId: v.id("seasons") },
   handler: async (ctx, args) => {
@@ -43,6 +51,7 @@ export const createEvent = mutation({
     ),
     isMajor: v.boolean(),
     eventNumber: v.number(),
+    imageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
     await requireCommissioner(ctx);
@@ -63,6 +72,7 @@ export const createEvent = mutation({
       multiplier: args.isMajor ? 2 : 1,
       status: "upcoming",
       eventNumber: args.eventNumber,
+      imageId: args.imageId,
     });
   },
 });
@@ -93,6 +103,7 @@ export const updateEvent = mutation({
       )
     ),
     eventNumber: v.optional(v.number()),
+    imageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
     await requireCommissioner(ctx);
@@ -121,10 +132,13 @@ export const getSeasonEvents = query({
       .collect();
 
     const withCourses = await Promise.all(
-      events.map(async (event) => ({
-        event,
-        course: await ctx.db.get(event.courseId),
-      }))
+      events.map(async (event) => {
+        const course = await ctx.db.get(event.courseId);
+        const imageUrl = event.imageId
+          ? await ctx.storage.getUrl(event.imageId)
+          : null;
+        return { event, course, imageUrl };
+      })
     );
 
     return withCourses.sort(
@@ -140,8 +154,11 @@ export const getEventById = query({
     if (!event) return null;
 
     const course = await ctx.db.get(event.courseId);
+    const imageUrl = event.imageId
+      ? await ctx.storage.getUrl(event.imageId)
+      : null;
 
-    return { event, course };
+    return { event, course, imageUrl };
   },
 });
 

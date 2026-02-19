@@ -10,6 +10,12 @@ const convex = new ConvexReactClient(
   process.env.NEXT_PUBLIC_CONVEX_URL as string
 );
 
+/**
+ * Convex + Clerk provider. Subscriptions created by useQuery and
+ * usePreloadedQuery are automatically cleaned up when components unmount.
+ * Conditional queries use the "skip" sentinel to defer execution until
+ * required arguments are available.
+ */
 export default function ConvexClientProvider({
   children,
 }: {

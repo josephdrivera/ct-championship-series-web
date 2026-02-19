@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePreloadedQuery, useQuery, Preloaded } from "convex/react";
+import { SignedOut } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { formatPoints } from "@/lib/format";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -342,12 +344,14 @@ export default function HomeContent({
             >
               View Leaderboard
             </Link>
-            <Link
-              href="/sign-in"
-              className="rounded-full border border-cream/30 px-8 py-3.5 text-sm font-semibold text-cream transition-colors hover:border-cream hover:bg-cream/10"
-            >
-              Sign In
-            </Link>
+            <SignedOut>
+              <Link
+                href="/sign-in"
+                className="rounded-full border border-cream/30 px-8 py-3.5 text-sm font-semibold text-cream transition-colors hover:border-cream hover:bg-cream/10"
+              >
+                Sign In
+              </Link>
+            </SignedOut>
           </motion.div>
         </motion.div>
       </section>
@@ -439,7 +443,7 @@ export default function HomeContent({
                         </p>
                       </div>
                       <p className="font-serif text-lg font-bold text-dark-green">
-                        {entry.standing.totalPoints}
+                        {formatPoints(entry.standing.totalPoints)}
                         <span className="ml-0.5 text-xs font-normal text-dark-green/40">
                           pts
                         </span>
@@ -508,7 +512,7 @@ export default function HomeContent({
                           </p>
                         </div>
                         <p className="font-serif text-lg font-bold text-dark-green">
-                          {entry.standing.totalPoints}
+                          {formatPoints(entry.standing.totalPoints)}
                           <span className="ml-0.5 text-xs font-normal text-dark-green/40">
                             pts
                           </span>

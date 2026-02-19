@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import Image from "next/image";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -26,6 +27,133 @@ const STATUS_STYLES: Record<string, string> = {
 
 const EVENT_STATUSES = ["upcoming", "active", "completed", "canceled"] as const;
 
+function useImageUpload() {
+  const generateUploadUrl = useMutation(api.events.generateUploadUrl);
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [imageId, setImageId] = useState<Id<"_storage"> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Client-side preview
+    setPreviewUrl(URL.createObjectURL(file));
+    setUploading(true);
+
+    try {
+      const uploadUrl = await generateUploadUrl();
+      const result = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      const { storageId } = await result.json();
+      setImageId(storageId as Id<"_storage">);
+    } catch {
+      toast.error("Failed to upload image");
+      setPreviewUrl(null);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function reset() {
+    setPreviewUrl(null);
+    setImageId(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function removeImage() {
+    reset();
+  }
+
+  return {
+    uploading,
+    previewUrl,
+    imageId,
+    fileInputRef,
+    handleFileChange,
+    reset,
+    removeImage,
+    setPreviewUrl,
+  };
+}
+
+function ImageUploadField({
+  uploading,
+  previewUrl,
+  existingImageUrl,
+  fileInputRef,
+  onFileChange,
+  onRemove,
+  compact,
+}: {
+  uploading: boolean;
+  previewUrl: string | null;
+  existingImageUrl?: string | null;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemove: () => void;
+  compact?: boolean;
+}) {
+  const displayUrl = previewUrl || existingImageUrl;
+  const labelClass = compact
+    ? "block text-xs font-medium text-dark-green"
+    : "block text-sm font-medium text-dark-green";
+
+  return (
+    <div className={compact ? "" : "sm:col-span-2"}>
+      <label className={labelClass}>Course Photo</label>
+      <div className="mt-1 flex items-center gap-4">
+        {displayUrl ? (
+          <div className="relative">
+            <img
+              src={displayUrl}
+              alt="Course preview"
+              className="h-20 w-32 rounded-lg object-cover"
+            />
+            <button
+              type="button"
+              onClick={onRemove}
+              className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white shadow hover:bg-red-600"
+            >
+              ×
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="flex h-20 w-32 items-center justify-center rounded-lg border-2 border-dashed border-sand text-xs text-dark-green/40 transition-colors hover:border-augusta hover:text-augusta disabled:opacity-50"
+          >
+            {uploading ? "Uploading..." : "Upload Photo"}
+          </button>
+        )}
+        {displayUrl && (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="text-xs font-medium text-augusta hover:text-deep-green disabled:opacity-50"
+          >
+            {uploading ? "Uploading..." : "Replace"}
+          </button>
+        )}
+      </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={onFileChange}
+        className="hidden"
+      />
+    </div>
+  );
+}
+
 function CreateEventForm({
   seasonId,
 }: {
@@ -33,6 +161,7 @@ function CreateEventForm({
 }) {
   const courses = useQuery(api.courses.getAllCourses);
   const createEvent = useMutation(api.events.createEvent);
+  const upload = useImageUpload();
 
   const [name, setName] = useState("");
   const [courseId, setCourseId] = useState("");
@@ -70,6 +199,7 @@ function CreateEventForm({
         format,
         eventNumber: parseInt(eventNumber, 10),
         isMajor,
+        imageId: upload.imageId ?? undefined,
       });
       toast.success("Event created");
       setName("");
@@ -78,6 +208,7 @@ function CreateEventForm({
       setFormat("stroke");
       setEventNumber("");
       setIsMajor(false);
+      upload.reset();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to create event");
     } finally {
@@ -200,12 +331,21 @@ function CreateEventForm({
               </span>
             </label>
           </div>
+
+          {/* Course Photo */}
+          <ImageUploadField
+            uploading={upload.uploading}
+            previewUrl={upload.previewUrl}
+            fileInputRef={upload.fileInputRef}
+            onFileChange={upload.handleFileChange}
+            onRemove={upload.removeImage}
+          />
         </div>
 
         <div className="pt-2">
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || upload.uploading}
             className="rounded-full bg-augusta px-5 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-deep-green disabled:opacity-50"
           >
             {submitting ? "Creating..." : "Create Event"}
@@ -218,6 +358,7 @@ function CreateEventForm({
 
 function EditEventForm({
   event,
+  existingImageUrl,
   onClose,
 }: {
   event: {
@@ -228,11 +369,14 @@ function EditEventForm({
     format: Format;
     eventNumber: number;
     isMajor: boolean;
+    imageId?: Id<"_storage">;
   };
+  existingImageUrl?: string | null;
   onClose: () => void;
 }) {
   const courses = useQuery(api.courses.getAllCourses);
   const updateEvent = useMutation(api.events.updateEvent);
+  const upload = useImageUpload();
 
   const [name, setName] = useState(event.name);
   const [courseId, setCourseId] = useState<string>(event.courseId);
@@ -246,7 +390,7 @@ function EditEventForm({
     e.preventDefault();
     setSubmitting(true);
     try {
-      await updateEvent({
+      const updateArgs: Parameters<typeof updateEvent>[0] = {
         eventId: event._id,
         name: name.trim(),
         courseId: courseId as Id<"courses">,
@@ -254,7 +398,13 @@ function EditEventForm({
         format,
         eventNumber: parseInt(eventNumber, 10),
         isMajor,
-      });
+      };
+
+      if (upload.imageId) {
+        updateArgs.imageId = upload.imageId;
+      }
+
+      await updateEvent(updateArgs);
       toast.success("Event updated");
       onClose();
     } catch (err) {
@@ -334,11 +484,22 @@ function EditEventForm({
               <span className="text-sm text-dark-green">Major (2x)</span>
             </label>
           </div>
+
+          {/* Course Photo */}
+          <ImageUploadField
+            uploading={upload.uploading}
+            previewUrl={upload.previewUrl}
+            existingImageUrl={existingImageUrl}
+            fileInputRef={upload.fileInputRef}
+            onFileChange={upload.handleFileChange}
+            onRemove={upload.removeImage}
+            compact
+          />
         </div>
         <div className="flex gap-2 pt-1">
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || upload.uploading}
             className="rounded-full bg-augusta px-4 py-2 text-xs font-semibold text-cream transition-colors hover:bg-deep-green disabled:opacity-50"
           >
             {submitting ? "Saving..." : "Save Changes"}
@@ -422,76 +583,91 @@ export default function AdminEventsPage() {
             </div>
           ) : (
             <div className="mt-4 space-y-4">
-              {seasonEvents.map(({ event, course }) => (
-                <div key={event._id} className="rounded-xl bg-white p-5 shadow-sm">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-semibold text-dark-green/40">
-                          #{event.eventNumber}
-                        </span>
-                        <h3 className="text-lg font-semibold text-dark-green">
-                          {event.name}
-                        </h3>
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLES[event.status]}`}
-                        >
-                          {event.status}
-                        </span>
-                        {event.isMajor && (
-                          <span className="rounded-full bg-azalea/10 px-2 py-0.5 text-xs font-semibold text-azalea">
-                            MAJOR
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-1 text-sm text-dark-green/60">
-                        {course?.name ?? "No course"} &middot;{" "}
-                        {new Date(event.date + "T12:00:00").toLocaleDateString(
-                          "en-US",
-                          { month: "short", day: "numeric", year: "numeric" }
-                        )}{" "}
-                        &middot; {formatLabel(event.format)}
-                      </p>
+              {seasonEvents.map(({ event, course, imageUrl }) => (
+                <div key={event._id} className="rounded-xl bg-white shadow-sm overflow-hidden">
+                  {/* Image thumbnail in admin card */}
+                  {imageUrl && (
+                    <div className="relative h-32 w-full">
+                      <Image
+                        src={imageUrl}
+                        alt={`${event.name} course photo`}
+                        fill
+                        sizes="(max-width: 1024px) 100vw, 768px"
+                        className="object-cover"
+                      />
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      {/* Status buttons */}
-                      {EVENT_STATUSES.map((status) => (
-                        <button
-                          key={status}
-                          onClick={() =>
-                            handleStatusChange(event._id, status)
-                          }
-                          disabled={event.status === status}
-                          className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                            event.status === status
-                              ? "cursor-default bg-augusta text-cream"
-                              : "bg-sand text-dark-green/70 hover:bg-dark-green/10"
-                          }`}
-                        >
-                          {status}
-                        </button>
-                      ))}
-                      <button
-                        onClick={() =>
-                          setEditingEventId(
-                            editingEventId === event._id ? null : event._id
-                          )
-                        }
-                        className="rounded-full bg-dark-green/10 px-3 py-1.5 text-xs font-medium text-dark-green transition-colors hover:bg-dark-green/20"
-                      >
-                        {editingEventId === event._id ? "Close" : "Edit"}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Inline edit form */}
-                  {editingEventId === event._id && (
-                    <EditEventForm
-                      event={event}
-                      onClose={() => setEditingEventId(null)}
-                    />
                   )}
+                  <div className="p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-semibold text-dark-green/40">
+                            #{event.eventNumber}
+                          </span>
+                          <h3 className="text-lg font-semibold text-dark-green">
+                            {event.name}
+                          </h3>
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLES[event.status]}`}
+                          >
+                            {event.status}
+                          </span>
+                          {event.isMajor && (
+                            <span className="rounded-full bg-azalea/10 px-2 py-0.5 text-xs font-semibold text-azalea">
+                              MAJOR
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-sm text-dark-green/60">
+                          {course?.name ?? "No course"} &middot;{" "}
+                          {new Date(event.date + "T12:00:00").toLocaleDateString(
+                            "en-US",
+                            { month: "short", day: "numeric", year: "numeric" }
+                          )}{" "}
+                          &middot; {formatLabel(event.format)}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {/* Status buttons */}
+                        {EVENT_STATUSES.map((status) => (
+                          <button
+                            key={status}
+                            onClick={() =>
+                              handleStatusChange(event._id, status)
+                            }
+                            disabled={event.status === status}
+                            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                              event.status === status
+                                ? "cursor-default bg-augusta text-cream"
+                                : "bg-sand text-dark-green/70 hover:bg-dark-green/10"
+                            }`}
+                          >
+                            {status}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() =>
+                            setEditingEventId(
+                              editingEventId === event._id ? null : event._id
+                            )
+                          }
+                          className="rounded-full bg-dark-green/10 px-3 py-1.5 text-xs font-medium text-dark-green transition-colors hover:bg-dark-green/20"
+                        >
+                          {editingEventId === event._id ? "Close" : "Edit"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Inline edit form */}
+                    {editingEventId === event._id && (
+                      <EditEventForm
+                        event={event}
+                        existingImageUrl={imageUrl}
+                        onClose={() => setEditingEventId(null)}
+                      />
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

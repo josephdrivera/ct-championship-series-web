@@ -6,6 +6,74 @@ in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-02-18
+
+### Added
+
+- Custom SVG favicon with green (`#002E1F`) background and gold (`#F2C75C`) "CS" monogram, auto-served by Next.js App Router
+- Regenerated PWA icons (`icon-192.png`, `icon-512.png`, `icon.svg`) with "CS" branding via sharp conversion script
+- SEO: `robots.ts` via Next.js Metadata API — allows public routes, disallows `/admin/`, `/api/`, `/sign-in/`
+- SEO: `sitemap.ts` via Next.js Metadata API with all public routes (`/`, `/leaderboard`, `/events`, `/players`, `/history`, `/privacy`, `/terms`)
+- Environment-based site URL resolution (`NEXT_PUBLIC_SITE_URL` → `VERCEL_URL` → localhost) for sitemap and robots
+- Error boundaries: `app/global-error.tsx` for root layout errors (inline styles), `app/error.tsx` for public pages, `app/admin/error.tsx` for admin pages — all with Masters-themed styling and retry/navigation buttons
+- Custom 404 page (`app/not-found.tsx`) with gold "404" heading and branded design
+- Convex file storage domain (`**.convex.cloud`) added to `next.config.ts` image remote patterns
+
+### Changed
+
+- Converted raw `<img>` tags to `next/image` in `EventsContent.tsx`, `EventDetailContent.tsx`, and admin events page for automatic image optimization, lazy loading, and responsive `sizes`
+- Removed `X-Powered-By` header via `poweredByHeader: false` in `next.config.ts`
+- README updated: Prompt 18 marked complete, deployment section with Vercel environment variable table and setup instructions added
+- Added `NEXT_PUBLIC_SITE_URL` to `.env.example`
+- Added JSDoc documentation to `ConvexClientProvider` describing automatic subscription cleanup
+
+### Performance
+
+- Core Web Vitals targets: LCP < 2.5s, CLS < 0.1, FID < 100ms
+- All fonts use `display: swap` for non-blocking rendering
+- SSR preloading via `preloadQuery` for all public pages
+- `next/image` used for all player avatars, hero images, and course photos
+- Convex subscription cleanup is automatic via SDK — no manual teardown required
+
+### Cross-Browser Testing
+
+- Chrome (desktop): Full feature support
+- Safari (desktop): Backdrop-filter and CSS custom properties verified
+- Firefox (desktop): All Tailwind CSS v4 features supported
+- Mobile Safari (iOS): PWA manifest, responsive design, touch targets verified
+- Mobile Chrome (Android): PWA installable, service worker active
+
+## [0.17.1] - 2026-02-18
+
+### Added
+
+- Course photo upload for events — commissioners can upload a course photo when creating or editing an event via Convex file storage
+- `generateUploadUrl` mutation in `convex/events.ts` for commissioner-authenticated file uploads
+- `imageId` field on events schema (`v.optional(v.id("_storage"))`) for storing course photo references
+- Image upload UI component with drag-to-upload button, thumbnail preview, and replace/remove controls in admin event forms
+- Course photos display as banner images on public event cards (`/events` page) with hover zoom effect
+- Course photos display as semi-transparent background overlay in event detail page hero header
+- Image URLs resolved server-side in `getSeasonEvents` and `getEventById` queries for efficient rendering
+
+## [0.17.0] - 2026-02-18
+
+### Added
+
+- Comprehensive seed data script (`convex/seed.ts`) creating 8 players with realistic profiles and handicaps (10–24 range), full 18-hole data for Keney Park (par 72), Shennecossett (par 71), and Wintonbury Hills (par 72), 3 completed events with calculated points and standings, 1 active event with 3 live rounds at different holes, achievement records, head-to-head season records, and sample league chat messages
+- Seed players: Mike Sullivan, Dave Chen, Tom Barrett, Chris Morales, Ryan O'Brien, James Park, Nick DeLuca, and Brian Walsh with varied handicaps for testing all leaderboard, event, and player profile scenarios
+- Live spectator test data: 3 players mid-round at holes 13, 8, and 5 with hole-by-hole scores for the active July at Wintonbury Hills event
+- Achievement badges for seed players: Low Round (Chen), Eagle (Sullivan), Birdie Streak (Chen), Most Improved (Morales)
+- Head-to-head records for top rivalry pairs (Chen vs Sullivan, Chen vs Morales, Sullivan vs Park, Morales vs Park) computed from 3 completed events
+- Six sample chat messages including announcements, player chat, and result notifications
+- Tie indicator ("T1", "T3", etc.) in event detail scorecard when multiple players share the same finish position
+
+### Changed
+
+- `clearData` seed mutation now also clears courseHoles, achievements, headToHead, messages, and seed users (clerkId prefixed with `seed_player_`)
+- Seed script expanded from basic course/season/event creation to comprehensive test dataset using `calculateAndApplyEventPoints` and `recalculateStandings` helpers for accurate scoring data
+- Landing page hero "Sign In" CTA button now hidden when user is already authenticated via Clerk `SignedOut` wrapper
+- Event detail scorecard points column now uses `formatPoints` utility for clean decimal display (e.g., 92.5 instead of 92.5000001)
+
 ## [0.16.0] - 2026-02-17
 
 ### Added

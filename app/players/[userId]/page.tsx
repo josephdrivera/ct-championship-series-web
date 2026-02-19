@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     });
 
     const title = `${profile.user.name} | CT Championship Series`;
-    const description = `${profile.user.name} — ${profile.stats.eventsPlayed} events played, ${profile.stats.totalPoints} points, ${profile.stats.wins} wins in the CT Championship Series.`;
+    const description = `${profile.user.name} — ${profile.stats.eventsPlayed} events played, ${parseFloat(profile.stats.totalPoints.toFixed(2))} points, ${profile.stats.wins} wins in the CT Championship Series.`;
 
     return {
       title,

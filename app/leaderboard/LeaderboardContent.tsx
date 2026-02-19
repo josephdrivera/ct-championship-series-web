@@ -2,6 +2,7 @@
 
 import { Preloaded, usePreloadedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { formatPoints } from "@/lib/format";
 import Image from "next/image";
 
 function PlayerAvatar({
@@ -118,7 +119,7 @@ export default function LeaderboardContent({
                   <div className="flex gap-8 md:ml-auto">
                     <div className="text-center">
                       <p className="text-3xl font-bold text-gold">
-                        {leader.standing.totalPoints}
+                        {formatPoints(leader.standing.totalPoints)}
                       </p>
                       <p className="text-xs uppercase tracking-wider text-cream/60">
                         Points
@@ -217,10 +218,10 @@ export default function LeaderboardContent({
                           {user.handicap ?? "N/A"}
                         </td>
                         <td className="px-4 py-3 text-center font-semibold text-dark-green">
-                          {standing.totalPoints}
+                          {formatPoints(standing.totalPoints)}
                         </td>
                         <td className="px-4 py-3 text-center text-dark-green/60">
-                          {isLeader ? "—" : `−${gap}`}
+                          {isLeader ? "—" : `−${formatPoints(gap)}`}
                         </td>
                       </tr>
                     );

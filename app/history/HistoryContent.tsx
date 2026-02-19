@@ -6,6 +6,7 @@ import { Preloaded, usePreloadedQuery, useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { formatPoints } from "@/lib/format";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -186,7 +187,7 @@ export default function HistoryContent({
                     <div className="mt-5 grid grid-cols-2 gap-3">
                       <div>
                         <p className="text-2xl font-bold text-gold">
-                          {entry.standing.totalPoints}
+                          {formatPoints(entry.standing.totalPoints)}
                         </p>
                         <p className="text-xs text-cream/40">Points</p>
                       </div>
@@ -465,7 +466,9 @@ export default function HistoryContent({
                 Most Season Points
               </p>
               <p className="mt-3 font-serif text-4xl font-bold text-gold">
-                {records.mostSeasonPoints.totalPoints || "—"}
+                {records.mostSeasonPoints.totalPoints
+                  ? formatPoints(records.mostSeasonPoints.totalPoints)
+                  : "—"}
               </p>
               {records.mostSeasonPoints.user && (
                 <div className="mt-4">
@@ -635,7 +638,7 @@ export default function HistoryContent({
                                   </div>
                                 </td>
                                 <td className="px-4 py-3 text-right font-serif text-sm font-bold text-gold">
-                                  {entry.standing.totalPoints}
+                                  {formatPoints(entry.standing.totalPoints)}
                                 </td>
                                 <td className="hidden px-4 py-3 text-right text-sm text-cream/70 sm:table-cell">
                                   {entry.standing.wins}

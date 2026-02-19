@@ -62,5 +62,34 @@ design theme.
 - [x] Prompt 14: Landing page with hero, mini-leaderboard, upcoming event, and recent results
 - [x] Prompt 15: League History & Hall of Fame page with champions, major winners, all-time records, and past standings
 - [x] Prompt 16: Responsive design, PWA manifest, service worker, cookie banner, privacy/terms pages, and loading skeletons
-- [ ] Prompt 17
-- [ ] Prompt 18
+- [x] Prompt 17: Comprehensive seed data with 8 players, full course holes, 3 completed events with points, live event with mid-round data, achievements, head-to-head records, and chat messages. E2E testing and bug fixes.
+- [x] Prompt 18: Performance optimization, error boundaries, SEO (robots.txt, sitemap.xml), custom favicon, image optimization with next/image, and Vercel deployment preparation
+
+## Deployment
+
+This app is deployed on [Vercel](https://vercel.com).
+
+### Environment Variables
+
+Set the following in your Vercel project settings (Settings > Environment Variables):
+
+| Variable | Description |
+|---|---|
+| `NEXT_PUBLIC_CONVEX_URL` | Convex deployment URL |
+| `CONVEX_DEPLOYMENT` | Convex deployment name |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key |
+| `CLERK_SECRET_KEY` | Clerk secret key |
+| `CLERK_WEBHOOK_SECRET` | Clerk webhook signing secret |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | `/sign-in` |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | `/sign-up` |
+| `NEXT_PUBLIC_SITE_URL` | Production URL (for sitemap and robots.txt) |
+
+### Deploy Steps
+
+1. Push code to GitHub
+2. Connect the repository to Vercel (auto-detects Next.js)
+3. Set environment variables in the Vercel dashboard
+4. Deploy
+5. Configure custom domain (if available)
+6. Update Clerk webhook URL to the production domain
+7. Verify Convex deployment URL matches production

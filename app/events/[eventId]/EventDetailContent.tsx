@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Preloaded, usePreloadedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { formatPoints } from "@/lib/format";
 
 const FORMAT_LABELS: Record<string, string> = {
   stroke: "Stroke Play",
@@ -27,7 +29,7 @@ export default function EventDetailContent({
 
   if (!eventData) return null;
 
-  const { event, course } = eventData;
+  const { event, course, imageUrl } = eventData;
 
   const formattedDate = new Date(event.date + "T12:00:00").toLocaleDateString(
     "en-US",
@@ -82,22 +84,35 @@ export default function EventDetailContent({
         )}
 
         {/* Hero Header */}
-        <div className="mb-6 rounded-2xl bg-gradient-to-br from-dark-green to-midnight p-8 text-cream shadow-lg">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gold/70">
-            Event {event.eventNumber}
-          </p>
-          <h1 className="font-serif text-3xl font-bold tracking-tight md:text-4xl">
-            {event.name}
-          </h1>
-          <p className="mt-2 text-xl text-cream/70">
-            {course?.name ?? "Course TBD"}
-          </p>
-          {event.status === "active" && (
-            <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-fairway/20 px-3 py-1 text-xs font-semibold text-fairway ring-1 ring-fairway/30">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-fairway" />
-              LIVE
-            </span>
+        <div
+          className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-dark-green to-midnight p-8 text-cream shadow-lg"
+        >
+          {imageUrl && (
+            <Image
+              src={imageUrl}
+              alt=""
+              fill
+              sizes="(max-width: 1280px) 100vw, 1280px"
+              className="object-cover opacity-30"
+            />
           )}
+          <div className="relative">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gold/70">
+              Event {event.eventNumber}
+            </p>
+            <h1 className="font-serif text-3xl font-bold tracking-tight md:text-4xl">
+              {event.name}
+            </h1>
+            <p className="mt-2 text-xl text-cream/70">
+              {course?.name ?? "Course TBD"}
+            </p>
+            {event.status === "active" && (
+              <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-fairway/20 px-3 py-1 text-xs font-semibold text-fairway ring-1 ring-fairway/30">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-fairway" />
+                LIVE
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Info Chips */}
@@ -142,7 +157,19 @@ export default function EventDetailContent({
                   : "No scores recorded for this event."}
               </p>
             </div>
-          ) : (
+          ) : (() => {
+            // Detect tied positions
+            const positionCounts = new Map<number, number>();
+            for (const { score } of scores) {
+              if (score.finishPosition > 0) {
+                positionCounts.set(
+                  score.finishPosition,
+                  (positionCounts.get(score.finishPosition) ?? 0) + 1
+                );
+              }
+            }
+
+            return (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px]">
                 <thead>
@@ -174,6 +201,9 @@ export default function EventDetailContent({
                     const relToPar = course
                       ? score.gross - course.par
                       : null;
+                    const isTied =
+                      score.finishPosition > 0 &&
+                      (positionCounts.get(score.finishPosition) ?? 0) > 1;
 
                     return (
                       <tr
@@ -187,7 +217,9 @@ export default function EventDetailContent({
                         <td className="px-4 py-3 font-semibold text-dark-green">
                           {score.finishPosition === 0
                             ? "\u2014"
-                            : score.finishPosition}
+                            : isTied
+                              ? `T${score.finishPosition}`
+                              : score.finishPosition}
                         </td>
                         <td className="px-4 py-3 font-medium text-dark-green">
                           {user.name}
@@ -214,7 +246,7 @@ export default function EventDetailContent({
                         </td>
                         <td className="px-4 py-3 text-center font-semibold text-dark-green">
                           {score.pointsEarned > 0
-                            ? score.pointsEarned
+                            ? formatPoints(score.pointsEarned)
                             : "\u2014"}
                         </td>
                       </tr>
@@ -223,7 +255,8 @@ export default function EventDetailContent({
                 </tbody>
               </table>
             </div>
-          )}
+            );
+          })()}
         </div>
       </div>
     </main>

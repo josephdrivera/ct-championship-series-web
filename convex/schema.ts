@@ -48,6 +48,7 @@ export default defineSchema({
       v.literal("canceled")
     ),
     eventNumber: v.number(),
+    imageId: v.optional(v.id("_storage")),
   })
     .index("by_season", ["seasonId"])
     .index("by_status", ["status"])
