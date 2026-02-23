@@ -31,6 +31,18 @@ export async function requireUser(
 }
 
 /**
+ * Returns the current authenticated user, asserting they are not suspended.
+ */
+export async function requireActiveUser(
+  ctx: QueryCtx | MutationCtx
+): Promise<Doc<"users">> {
+  const user = await requireUser(ctx);
+  if (user.isSuspended)
+    throw new Error("Your account is suspended. You cannot perform this action.");
+  return user;
+}
+
+/**
  * Returns the current user, asserting commissioner or super admin access.
  */
 export async function requireCommissioner(
@@ -150,6 +162,22 @@ export async function calculateAndApplyEventPoints(
 
   // Recalculate season standings
   await recalculateStandings(ctx, event.seasonId);
+
+  // Notify all players that results are finalized
+  const allUsers = await ctx.db.query("users").collect();
+  const now = Date.now();
+  for (const user of allUsers) {
+    await ctx.db.insert("notifications", {
+      userId: user._id,
+      title: "Results Finalized",
+      body: `Scores for ${event.name} are official. Check the leaderboard for updated standings.`,
+      type: "event_completed",
+      isRead: false,
+      eventId,
+      seasonId: event.seasonId,
+      createdAt: now,
+    });
+  }
 }
 
 /**

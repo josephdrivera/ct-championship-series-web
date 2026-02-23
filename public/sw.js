@@ -1,4 +1,4 @@
-const CACHE_NAME = "ct-golf-v1";
+const CACHE_NAME = "ct-golf-v2";
 const OFFLINE_URLS = ["/leaderboard"];
 
 // Install: pre-cache the leaderboard page shell
@@ -53,6 +53,55 @@ self.addEventListener("fetch", (event) => {
       .catch(() => {
         // Serve from cache when offline
         return caches.match(request);
+      })
+  );
+});
+
+// Push notification handler
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  let data;
+  try {
+    data = event.data.json();
+  } catch {
+    data = { title: "CT Golf", body: event.data.text() };
+  }
+
+  const { title, body, icon, badge, url, tag } = data;
+
+  event.waitUntil(
+    self.registration.showNotification(title || "CT Championship Series", {
+      body: body || "",
+      icon: icon || "/icons/icon-192.png",
+      badge: badge || "/icons/icon-192.png",
+      tag: tag || "ct-golf-notification",
+      data: { url: url || "/" },
+      renotify: true,
+      requireInteraction: false,
+    })
+  );
+});
+
+// Notification click handler — open or focus the app
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const targetUrl = event.notification.data?.url || "/";
+
+  event.waitUntil(
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((windowClients) => {
+        // Focus existing window if open
+        for (const client of windowClients) {
+          if (client.url.includes(self.location.origin) && "focus" in client) {
+            client.navigate(targetUrl);
+            return client.focus();
+          }
+        }
+        // Otherwise open new window
+        return clients.openWindow(targetUrl);
       })
   );
 });

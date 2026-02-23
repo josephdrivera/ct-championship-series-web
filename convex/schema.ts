@@ -10,6 +10,8 @@ export default defineSchema({
     joinedYear: v.number(),
     isCommissioner: v.boolean(),
     isSuperAdmin: v.optional(v.boolean()),
+    hasSeenWelcome: v.optional(v.boolean()),
+    isSuspended: v.optional(v.boolean()),
   }).index("by_clerk_id", ["clerkId"]),
 
   seasons: defineTable({
@@ -177,4 +179,36 @@ export default defineSchema({
     caption: v.optional(v.string()),
     timestamp: v.number(),
   }).index("by_event", ["eventId"]),
+
+  notifications: defineTable({
+    userId: v.id("users"),
+    title: v.string(),
+    body: v.string(),
+    type: v.union(
+      v.literal("announcement"),
+      v.literal("event_created"),
+      v.literal("event_completed"),
+      v.literal("event_canceled"),
+      v.literal("season_started"),
+      v.literal("score_result"),
+      v.literal("system")
+    ),
+    isRead: v.boolean(),
+    eventId: v.optional(v.id("events")),
+    seasonId: v.optional(v.id("seasons")),
+    senderId: v.optional(v.id("users")),
+    createdAt: v.number(),
+  })
+    .index("by_user_unread", ["userId", "isRead"])
+    .index("by_user_created", ["userId", "createdAt"]),
+
+  pushSubscriptions: defineTable({
+    userId: v.id("users"),
+    endpoint: v.string(),
+    p256dh: v.string(),
+    auth: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_endpoint", ["endpoint"]),
 });

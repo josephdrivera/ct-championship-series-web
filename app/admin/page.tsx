@@ -31,6 +31,7 @@ const quickActions = [
   { href: "/admin/events", label: "Create Event" },
   { href: "/admin/scores", label: "Enter Scores" },
   { href: "/admin/courses", label: "Add Course" },
+  { href: "/admin/notifications", label: "Send Announcement" },
 ];
 
 export default function AdminDashboard() {

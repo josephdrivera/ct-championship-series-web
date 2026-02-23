@@ -338,11 +338,55 @@ export default function AdminPlayersPage() {
   const players = useQuery(api.players.getPlayersWithStats);
   const currentUser = useQuery(api.users.getCurrentUser);
   const updateUserRole = useMutation(api.users.updateUserRole);
+  const suspendPlayer = useMutation(api.users.suspendPlayer);
+  const unsuspendPlayer = useMutation(api.users.unsuspendPlayer);
+  const deletePlayerMutation = useMutation(api.users.deletePlayer);
 
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
   const [bulkHandicapMode, setBulkHandicapMode] = useState(false);
+  const [confirmSuspendId, setConfirmSuspendId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const isSuperAdmin = currentUser?.isSuperAdmin === true;
+
+  async function handleSuspend(userId: Id<"users">) {
+    setActionLoading(userId as string);
+    try {
+      await suspendPlayer({ userId });
+      toast.success("Player suspended");
+      setConfirmSuspendId(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to suspend player");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleUnsuspend(userId: Id<"users">) {
+    setActionLoading(userId as string);
+    try {
+      await unsuspendPlayer({ userId });
+      toast.success("Player reinstated");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to unsuspend player");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleDelete(userId: Id<"users">) {
+    setActionLoading(userId as string);
+    try {
+      await deletePlayerMutation({ userId });
+      toast.success("Player and all associated data deleted");
+      setConfirmDeleteId(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete player");
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
   async function handleToggleCommissioner(
     userId: Id<"users">,
@@ -457,7 +501,7 @@ export default function AdminPlayersPage() {
               return (
                 <div
                   key={player._id}
-                  className="rounded-xl bg-white p-4 shadow-sm"
+                  className={`rounded-xl bg-white p-4 shadow-sm ${player.isSuspended ? "opacity-60" : ""}`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     {/* Player info */}
@@ -503,6 +547,12 @@ export default function AdminPlayersPage() {
                             <RoleBadge
                               label="Member"
                               color="bg-sand text-dark-green/60"
+                            />
+                          )}
+                          {player.isSuspended && (
+                            <RoleBadge
+                              label="Suspended"
+                              color="bg-red-100 text-red-600"
                             />
                           )}
                           {player.handicap !== undefined && (
@@ -561,6 +611,34 @@ export default function AdminPlayersPage() {
                           </button>
                         </>
                       )}
+                      {/* Suspend/Unsuspend - commissioners and super admins, not self */}
+                      {!isCurrentUser && (
+                        player.isSuspended ? (
+                          <button
+                            onClick={() => handleUnsuspend(player._id)}
+                            disabled={actionLoading === (player._id as string)}
+                            className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50"
+                          >
+                            {actionLoading === (player._id as string) ? "..." : "Unsuspend"}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmSuspendId(player._id as string)}
+                            className="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
+                          >
+                            Suspend
+                          </button>
+                        )
+                      )}
+                      {/* Delete - super admins only, not self */}
+                      {isSuperAdmin && !isCurrentUser && (
+                        <button
+                          onClick={() => setConfirmDeleteId(player._id as string)}
+                          className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
+                        >
+                          Delete
+                        </button>
+                      )}
                       <button
                         onClick={() =>
                           setEditingPlayerId(
@@ -573,6 +651,52 @@ export default function AdminPlayersPage() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Suspend confirmation */}
+                  {confirmSuspendId === (player._id as string) && (
+                    <div className="mt-3 flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                      <p className="flex-1 text-sm text-dark-green">
+                        Suspend <span className="font-semibold">{player.name}</span>? They won&apos;t be able to submit scores or participate in events.
+                      </p>
+                      <button
+                        onClick={() => setConfirmSuspendId(null)}
+                        disabled={actionLoading === (player._id as string)}
+                        className="rounded-full px-4 py-1.5 text-sm font-medium text-dark-green/60 transition-colors hover:text-dark-green"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleSuspend(player._id)}
+                        disabled={actionLoading === (player._id as string)}
+                        className="rounded-full bg-amber-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+                      >
+                        {actionLoading === (player._id as string) ? "Suspending..." : "Confirm Suspend"}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Delete confirmation */}
+                  {confirmDeleteId === (player._id as string) && (
+                    <div className="mt-3 flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                      <p className="flex-1 text-sm text-dark-green">
+                        Permanently delete <span className="font-semibold">{player.name}</span> and all their data (scores, standings, achievements)? This cannot be undone.
+                      </p>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        disabled={actionLoading === (player._id as string)}
+                        className="rounded-full px-4 py-1.5 text-sm font-medium text-dark-green/60 transition-colors hover:text-dark-green"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleDelete(player._id)}
+                        disabled={actionLoading === (player._id as string)}
+                        className="rounded-full bg-red-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {actionLoading === (player._id as string) ? "Deleting..." : "Confirm Delete"}
+                      </button>
+                    </div>
+                  )}
 
                   {/* Inline edit form */}
                   {isEditing && (

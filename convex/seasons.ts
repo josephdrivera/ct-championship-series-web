@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import { requireCommissioner } from "./helpers";
 
 export const getActiveSeason = query({
@@ -89,6 +90,16 @@ export const updateSeason = mutation({
     if (updates.championId !== undefined) patch.championId = updates.championId;
 
     await ctx.db.patch(seasonId, patch);
+
+    // Notify all players when a season becomes active
+    if (updates.status === "active" && season.status !== "active") {
+      await ctx.runMutation(internal.notifications.notifyAllPlayers, {
+        title: "New Season Started",
+        body: `The ${updates.name ?? season.name} season is now underway. Good luck!`,
+        type: "season_started",
+        seasonId,
+      });
+    }
   },
 });
 

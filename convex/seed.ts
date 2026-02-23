@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { internalMutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import {
   calculateAndApplyEventPoints,
@@ -18,7 +18,7 @@ import {
  * - Head-to-head records
  * - Sample chat messages
  */
-export const seedData = mutation({
+export const seedData = internalMutation({
   args: {},
   handler: async (ctx) => {
     // --- Idempotency check ---
@@ -458,7 +458,7 @@ export const seedData = mutation({
  * Run via CLI: npx convex run seed:clearData
  * Does NOT delete real Clerk-authenticated users.
  */
-export const clearData = mutation({
+export const clearData = internalMutation({
   args: {},
   handler: async (ctx) => {
     let totalDeleted = 0;
@@ -498,11 +498,48 @@ export const clearData = mutation({
 });
 
 /**
+ * Purges ALL data from every table (including real users).
+ * Use this before going live to start completely fresh.
+ * Run via CLI: npx convex run seed:purgeAllData
+ * WARNING: This is destructive and irreversible.
+ */
+export const purgeAllData = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    let totalDeleted = 0;
+
+    const tables = [
+      "holeScores",
+      "liveRounds",
+      "scores",
+      "standings",
+      "achievements",
+      "headToHead",
+      "messages",
+      "photos",
+      "courseHoles",
+      "events",
+      "courses",
+      "seasons",
+      "users",
+    ] as const;
+
+    for (const table of tables) {
+      const docs = await ctx.db.query(table).collect();
+      for (const doc of docs) await ctx.db.delete(doc._id);
+      totalDeleted += docs.length;
+    }
+
+    return { totalDeleted };
+  },
+});
+
+/**
  * Promotes the first user to super admin.
  * Run via CLI: npx convex run seed:promoteSuperAdmin
  * Sign in first to create your user.
  */
-export const promoteSuperAdmin = mutation({
+export const promoteSuperAdmin = internalMutation({
   args: {},
   handler: async (ctx) => {
     const users = await ctx.db.query("users").collect();

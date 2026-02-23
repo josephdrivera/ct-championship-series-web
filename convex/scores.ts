@@ -1,7 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import {
-  requireUser,
+  requireActiveUser,
   requireCommissioner,
   calculateAndApplyEventPoints,
 } from "./helpers";
@@ -41,7 +41,7 @@ export const submitScore = mutation({
     pickups: v.number(),
   },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx);
+    const user = await requireActiveUser(ctx);
 
     const event = await ctx.db.get(args.eventId);
     if (!event) throw new Error("Event not found");

@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import { requireCommissioner } from "./helpers";
 
 export const generateUploadUrl = mutation({
@@ -62,7 +63,7 @@ export const createEvent = mutation({
     const course = await ctx.db.get(args.courseId);
     if (!course) throw new Error("Course not found");
 
-    return await ctx.db.insert("events", {
+    const eventId = await ctx.db.insert("events", {
       seasonId: args.seasonId,
       name: args.name,
       courseId: args.courseId,
@@ -74,6 +75,20 @@ export const createEvent = mutation({
       eventNumber: args.eventNumber,
       imageId: args.imageId,
     });
+
+    const dateFormatted = new Date(args.date + "T12:00:00").toLocaleDateString(
+      "en-US",
+      { month: "long", day: "numeric" }
+    );
+    await ctx.runMutation(internal.notifications.notifyAllPlayers, {
+      title: "New Event Scheduled",
+      body: `${args.name} at ${course.name} on ${dateFormatted}.${args.isMajor ? " This is a Major Championship!" : ""}`,
+      type: "event_created",
+      eventId,
+      seasonId: args.seasonId,
+    });
+
+    return eventId;
   },
 });
 
@@ -120,6 +135,17 @@ export const updateEvent = mutation({
     }
 
     await ctx.db.patch(eventId, patch);
+
+    // Notify on cancellation
+    if (args.status === "canceled" && event.status !== "canceled") {
+      await ctx.runMutation(internal.notifications.notifyAllPlayers, {
+        title: "Event Canceled",
+        body: `${event.name} has been canceled.`,
+        type: "event_canceled",
+        eventId,
+        seasonId: event.seasonId,
+      });
+    }
   },
 });
 

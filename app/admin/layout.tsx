@@ -6,8 +6,6 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Toaster } from "sonner";
-
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: "📊" },
   { href: "/admin/events", label: "Events", icon: "🏌️" },
@@ -15,6 +13,7 @@ const navItems = [
   { href: "/admin/scores", label: "Scores", icon: "📝" },
   { href: "/admin/players", label: "Players", icon: "👥" },
   { href: "/admin/seasons", label: "Seasons", icon: "🏆" },
+  { href: "/admin/notifications", label: "Notifications", icon: "🔔" },
 ];
 
 function SidebarNav({
@@ -148,16 +147,6 @@ export default function AdminLayout({
 
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          style: {
-            background: "#FDF8F0",
-            border: "1px solid #E8DFD0",
-            color: "#002E1F",
-          },
-        }}
-      />
       {/* Mobile top bar */}
       <div className="fixed top-16 right-0 left-0 z-30 flex items-center border-b border-sand bg-cream px-4 py-3 lg:hidden">
         <button

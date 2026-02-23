@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import NotificationBell from "./notifications/NotificationBell";
 
 function AdminLink() {
   const currentUser = useQuery(api.users.getCurrentUser);
@@ -72,6 +73,7 @@ export default function Header() {
               <SignedIn>
                 <div className="flex items-center gap-4">
                   <AdminLink />
+                  <NotificationBell />
                   <UserButton
                     appearance={{
                       elements: {
@@ -156,6 +158,7 @@ export default function Header() {
                 <SignedIn>
                   <div className="flex items-center gap-4 px-3">
                     <AdminLink />
+                    <NotificationBell />
                     <UserButton
                       appearance={{
                         elements: {

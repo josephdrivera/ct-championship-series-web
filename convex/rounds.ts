@@ -111,6 +111,17 @@ export const submitHoleScore = mutation({
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
 
+    // Validate inputs
+    if (args.holeNumber < 1 || args.holeNumber > 18) {
+      throw new Error("Hole number must be between 1 and 18");
+    }
+    if (args.par < 2 || args.par > 6) {
+      throw new Error("Par must be between 2 and 6");
+    }
+    if (args.score < 1 || args.score > 20) {
+      throw new Error("Score must be between 1 and 20");
+    }
+
     const round = await ctx.db.get(args.liveRoundId);
     if (!round) throw new Error("Round not found");
     if (round.userId !== user._id) throw new Error("Not your round");

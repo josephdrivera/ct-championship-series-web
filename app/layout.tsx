@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
 import Header from "@/components/Header";
 import CookieBanner from "@/components/CookieBanner";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
@@ -47,6 +48,16 @@ export default function RootLayout({
         className={`${playfairDisplay.variable} ${dmSans.variable} font-sans antialiased`}
       >
         <ConvexClientProvider>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: "#FDF8F0",
+                border: "1px solid #E8DFD0",
+                color: "#002E1F",
+              },
+            }}
+          />
           <Header />
           {children}
           <CookieBanner />

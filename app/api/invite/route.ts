@@ -5,14 +5,24 @@ import { api } from "@/convex/_generated/api";
 
 export async function POST(request: NextRequest) {
   // Verify the user is authenticated
-  const { userId } = await auth();
+  const { userId, getToken } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // We can't easily check isSuperAdmin from the server side without
-  // a Convex token, so we'll rely on the client-side guard + Clerk auth.
-  // The admin layout already blocks non-commissioners/super admins.
+  // Verify the user has super admin privileges
+  const token = await getToken({ template: "convex" });
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const currentUser = await fetchQuery(
+    api.users.getCurrentUser,
+    {},
+    { token }
+  );
+  if (!currentUser?.isSuperAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const body = await request.json();
   const { emailAddress } = body;

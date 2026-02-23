@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePreloadedQuery, useQuery, Preloaded } from "convex/react";
-import { SignedOut } from "@clerk/nextjs";
+import { SignedOut, SignedIn } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { formatPoints } from "@/lib/format";
+import CountdownTimer from "@/components/CountdownTimer";
+import WelcomeModal from "@/components/modals/WelcomeModal";
+import EventCountdownModal from "@/components/modals/EventCountdownModal";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -20,52 +23,6 @@ const stagger = {
     transition: { staggerChildren: 0.15 },
   },
 };
-
-function CountdownTimer({ targetDate }: { targetDate: string }) {
-  const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(targetDate));
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeLeft(getTimeLeft(targetDate));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [targetDate]);
-
-  if (timeLeft.total <= 0) return null;
-
-  return (
-    <div className="mt-4 flex justify-center gap-4">
-      {[
-        { value: timeLeft.days, label: "Days" },
-        { value: timeLeft.hours, label: "Hrs" },
-        { value: timeLeft.minutes, label: "Min" },
-        { value: timeLeft.seconds, label: "Sec" },
-      ].map((unit) => (
-        <div key={unit.label} className="text-center">
-          <p className="font-serif text-2xl font-bold text-dark-green">
-            {String(unit.value).padStart(2, "0")}
-          </p>
-          <p className="text-xs font-medium uppercase tracking-wider text-dark-green/50">
-            {unit.label}
-          </p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function getTimeLeft(dateStr: string) {
-  const diff = new Date(dateStr + "T08:00:00").getTime() - Date.now();
-  if (diff <= 0)
-    return { total: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
-  return {
-    total: diff,
-    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-    hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-    minutes: Math.floor((diff / (1000 * 60)) % 60),
-    seconds: Math.floor((diff / 1000) % 60),
-  };
-}
 
 function PlayerAvatar({
   name,
@@ -243,6 +200,8 @@ export default function HomeContent({
   const season = usePreloadedQuery(preloadedSeason);
   const standings = usePreloadedQuery(preloadedStandings);
   const events = usePreloadedQuery(preloadedEvents);
+  const currentUser = useQuery(api.users.getCurrentUser);
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
 
   const top3 = standings.slice(0, 3);
 
@@ -579,7 +538,9 @@ export default function HomeContent({
                       })}
                     </p>
                     {upcomingEntry.event.status === "upcoming" && (
-                      <CountdownTimer targetDate={upcomingEntry.event.date} />
+                      <div className="mt-4">
+                        <CountdownTimer targetDate={upcomingEntry.event.date} />
+                      </div>
                     )}
                   </div>
                 ) : (
@@ -652,6 +613,28 @@ export default function HomeContent({
           </>
         )}
       </div>
+
+      {/* Welcome Modal — first-time users */}
+      <SignedIn>
+        {currentUser && !currentUser.hasSeenWelcome && !welcomeDismissed && (
+          <WelcomeModal
+            user={currentUser}
+            onClose={() => setWelcomeDismissed(true)}
+          />
+        )}
+
+        {/* Event Countdown Modal — upcoming event within 3 days */}
+        {currentUser?.hasSeenWelcome &&
+          upcomingEntry &&
+          upcomingEntry.event.status === "upcoming" && (
+            <EventCountdownModal
+              userName={currentUser.name}
+              event={upcomingEntry.event}
+              course={upcomingEntry.course}
+              courseImageUrl={upcomingEntry.course?.heroImage}
+            />
+          )}
+      </SignedIn>
     </main>
   );
 }
