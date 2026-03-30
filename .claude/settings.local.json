@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/josephrivera/Desktop/Web/**)",
+      "Bash(git -C /Users/josephrivera/Desktop/Web Dev/ct-championship-series-web log --oneline)",
+      "Bash(git -C /Users/josephrivera/Desktop/Web Dev/ct-championship-series-web branch -a)",
+      "Bash(git -C /Users/josephrivera/Desktop/Web Dev/ct-championship-series-web remote -v)",
+      "Bash(npm run build:*)",
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(test:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx next build:*)",
+      "Bash(npx convex env set:*)",
+      "WebFetch(domain:unsplash.com)",
+      "Bash(curl:*)",
+      "Bash(npx convex run:*)",
+      "Bash(node -e:*)",
+      "Bash(npx convex typecheck:*)",
+      "Bash(npx convex deploy:*)",
+      "Bash(node:*)",
+      "Bash(npm run lint:*)",
+      "Bash(grep:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(find:*)",
+      "Bash(npx convex codegen:*)"
+    ]
+  }
+}

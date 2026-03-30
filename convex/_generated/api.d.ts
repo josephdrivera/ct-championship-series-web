@@ -8,13 +8,47 @@
  * @module
  */
 
+import type * as courses from "../courses.js";
+import type * as events from "../events.js";
+import type * as helpers from "../helpers.js";
+import type * as history from "../history.js";
+import type * as http from "../http.js";
+import type * as notifications from "../notifications.js";
+import type * as players from "../players.js";
+import type * as pushNotifications from "../pushNotifications.js";
+import type * as pushNotificationsHelpers from "../pushNotificationsHelpers.js";
+import type * as pushSubscriptions from "../pushSubscriptions.js";
+import type * as rounds from "../rounds.js";
+import type * as scores from "../scores.js";
+import type * as seasons from "../seasons.js";
+import type * as seed from "../seed.js";
+import type * as standings from "../standings.js";
+import type * as users from "../users.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  courses: typeof courses;
+  events: typeof events;
+  helpers: typeof helpers;
+  history: typeof history;
+  http: typeof http;
+  notifications: typeof notifications;
+  players: typeof players;
+  pushNotifications: typeof pushNotifications;
+  pushNotificationsHelpers: typeof pushNotificationsHelpers;
+  pushSubscriptions: typeof pushSubscriptions;
+  rounds: typeof rounds;
+  scores: typeof scores;
+  seasons: typeof seasons;
+  seed: typeof seed;
+  standings: typeof standings;
+  users: typeof users;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.
