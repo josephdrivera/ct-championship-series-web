@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
+/** Routes not listed here require a Clerk session (e.g. /admin, /api/invite). */
 const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",

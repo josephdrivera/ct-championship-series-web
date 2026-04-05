@@ -17,12 +17,16 @@ export default function NotificationBell() {
   const prevCountRef = useRef(count);
   const [shouldPulse, setShouldPulse] = useState(false);
 
-  // Pulse animation when count increases
+  // Pulse animation when count increases (deferred setState avoids sync updates in effect)
   useEffect(() => {
-    if (count > prevCountRef.current) {
-      setShouldPulse(true);
-      const timer = setTimeout(() => setShouldPulse(false), 1000);
-      return () => clearTimeout(timer);
+    const prev = prevCountRef.current;
+    if (count > prev) {
+      const id = window.setTimeout(() => {
+        setShouldPulse(true);
+        window.setTimeout(() => setShouldPulse(false), 1000);
+      }, 0);
+      prevCountRef.current = count;
+      return () => clearTimeout(id);
     }
     prevCountRef.current = count;
   }, [count]);

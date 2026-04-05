@@ -88,8 +88,8 @@ Set the following in your Vercel project settings (Settings > Environment Variab
 
 1. Push code to GitHub
 2. Connect the repository to Vercel (auto-detects Next.js)
-3. Set environment variables in the Vercel dashboard
+3. Set environment variables in the Vercel dashboard. For production, set `NEXT_PUBLIC_CONVEX_URL` to your **Convex production** deployment URL (from `npx convex deploy` output, e.g. `https://giddy-rhinoceros-119.convex.cloud`), not the dev URL from `npx convex dev`.
 4. Deploy
 5. Configure custom domain (if available)
-6. Update Clerk webhook URL to the production domain
-7. Verify Convex deployment URL matches production
+6. In Clerk, point the user webhook to your Convex **site** URL: `https://<deployment>.convex.site/clerk-webhook` (not the Vercel domain). Set the signing secret in the Convex dashboard as `CLERK_WEBHOOK_SECRET`.
+7. Verify the app loads and `NEXT_PUBLIC_SITE_URL` matches your public hostname for sitemap/robots.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Preloaded, usePreloadedQuery, useQuery } from "convex/react";
@@ -171,11 +171,9 @@ export default function LiveSpectatorContent({
   const eventData = usePreloadedQuery(preloadedEvent);
   const leaderboard = usePreloadedQuery(preloadedLeaderboard);
   const [expandedRoundId, setExpandedRoundId] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-
-  // Update "last updated" whenever leaderboard data changes
-  useEffect(() => {
-    setLastUpdated(new Date());
+  const lastUpdated = useMemo(() => {
+    void leaderboard;
+    return new Date();
   }, [leaderboard]);
 
   if (!eventData) return null;

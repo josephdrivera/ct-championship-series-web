@@ -502,6 +502,7 @@ export const clearData = internalMutation({
  * Use this before going live to start completely fresh.
  * Run via CLI: npx convex run seed:purgeAllData
  * WARNING: This is destructive and irreversible.
+ * Includes notifications and pushSubscriptions so no rows are left behind.
  */
 export const purgeAllData = internalMutation({
   args: {},
@@ -516,6 +517,8 @@ export const purgeAllData = internalMutation({
       "achievements",
       "headToHead",
       "messages",
+      "pushSubscriptions",
+      "notifications",
       "photos",
       "courseHoles",
       "events",

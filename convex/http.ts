@@ -1,7 +1,22 @@
+/**
+ * Convex HTTP routes. Clerk webhooks are verified here (not on Vercel).
+ * Set CLERK_WEBHOOK_SECRET in the Convex dashboard (production); point Clerk’s webhook URL to
+ * https://<deployment>.convex.site/clerk-webhook
+ */
 import { httpAction } from "./_generated/server";
 import { httpRouter } from "convex/server";
 import { internal } from "./_generated/api";
 import { Webhook } from "svix";
+
+type ClerkUserWebhookEvent = {
+  type: string;
+  data: {
+    id: string;
+    first_name?: string | null;
+    last_name?: string | null;
+    image_url?: string | null;
+  };
+};
 
 const http = httpRouter();
 
@@ -26,19 +41,19 @@ http.route({
     const body = await request.text();
 
     const wh = new Webhook(webhookSecret);
-    let event: any;
+    let event: ClerkUserWebhookEvent;
     try {
       event = wh.verify(body, {
         "svix-id": svixId,
         "svix-timestamp": svixTimestamp,
         "svix-signature": svixSignature,
-      });
+      }) as ClerkUserWebhookEvent;
     } catch (err) {
       console.error("Webhook verification failed:", err);
       return new Response("Invalid webhook signature", { status: 400 });
     }
 
-    const eventType = event.type as string;
+    const eventType = event.type;
 
     if (eventType === "user.created" || eventType === "user.updated") {
       const { id, first_name, last_name, image_url } = event.data;
