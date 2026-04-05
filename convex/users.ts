@@ -1,6 +1,12 @@
+/**
+ * User management: public queries, role/handicap mutations (commissioner+),
+ * account lifecycle (suspend/delete — super admin), and Clerk webhook sync.
+ */
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireSuperAdmin, requireCommissioner, requireUser } from "./helpers";
+
+// ── Queries (public, no auth required) ─────────────────────────────
 
 export const getCurrentUser = query({
   args: {},
@@ -23,6 +29,8 @@ export const getUser = query({
     return await ctx.db.get(args.userId);
   },
 });
+
+// ── Admin mutations (commissioner / super admin) ───────────────────
 
 export const updateUserRole = mutation({
   args: {
@@ -66,6 +74,8 @@ export const updatePlayer = mutation({
   },
 });
 
+// ── Player self-service mutations ──────────────────────────────────
+
 export const markWelcomeSeen = mutation({
   args: {},
   handler: async (ctx) => {
@@ -99,6 +109,8 @@ export const bulkUpdateHandicaps = mutation({
     }
   },
 });
+
+// ── Account lifecycle (commissioner / super admin) ─────────────────
 
 export const suspendPlayer = mutation({
   args: { userId: v.id("users") },
@@ -253,6 +265,8 @@ export const deletePlayer = mutation({
     await ctx.db.delete(args.userId);
   },
 });
+
+// ── Internal: Clerk webhook sync (server-only, not browser-callable) ──
 
 export const upsertFromClerk = internalMutation({
   args: {

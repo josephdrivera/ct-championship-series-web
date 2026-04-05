@@ -1,3 +1,7 @@
+/**
+ * Hall of Fame / history: all public queries (no auth required).
+ * Champion cards, major winners, and all-time stat records.
+ */
 import { query } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 

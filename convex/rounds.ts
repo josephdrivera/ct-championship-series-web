@@ -1,3 +1,8 @@
+/**
+ * Live round lifecycle: public leaderboard/hole-score reads, player round
+ * start + hole-by-hole submit (requireUser), commissioner round completion
+ * with stat aggregation and auto-finalization.
+ */
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import {
@@ -5,6 +10,8 @@ import {
   requireCommissioner,
   calculateAndApplyEventPoints,
 } from "./helpers";
+
+// ── Queries (public, real-time leaderboard) ────────────────────────
 
 export const getActiveRounds = query({
   args: { eventId: v.id("events") },
@@ -69,6 +76,8 @@ export const getRoundHoleScores = query({
   },
 });
 
+// ── Player mutations (requireUser) ─────────────────────────────────
+
 export const startRound = mutation({
   args: { eventId: v.id("events") },
   handler: async (ctx, args) => {
@@ -111,12 +120,8 @@ export const submitHoleScore = mutation({
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
 
-    // Validate inputs
     if (args.holeNumber < 1 || args.holeNumber > 18) {
       throw new Error("Hole number must be between 1 and 18");
-    }
-    if (args.par < 2 || args.par > 6) {
-      throw new Error("Par must be between 2 and 6");
     }
     if (args.score < 1 || args.score > 20) {
       throw new Error("Score must be between 1 and 20");
@@ -132,7 +137,25 @@ export const submitHoleScore = mutation({
       );
     }
 
-    const relToPar = args.score - args.par;
+    // Derive par from courseHoles (source of truth) when available;
+    // fall back to client-supplied par if hole data is not entered yet.
+    const event = await ctx.db.get(round.eventId);
+    let par = args.par;
+    if (event) {
+      const courseHole = await ctx.db
+        .query("courseHoles")
+        .withIndex("by_course", (q) => q.eq("courseId", event.courseId))
+        .filter((q) => q.eq(q.field("holeNumber"), args.holeNumber))
+        .unique();
+      if (courseHole) {
+        par = courseHole.par;
+      }
+    }
+    if (par < 2 || par > 6) {
+      throw new Error("Par must be between 2 and 6");
+    }
+
+    const relToPar = args.score - par;
 
     // Check for existing hole score (upsert)
     const existingHole = await ctx.db
@@ -145,7 +168,7 @@ export const submitHoleScore = mutation({
     if (existingHole) {
       await ctx.db.patch(existingHole._id, {
         score: args.score,
-        par: args.par,
+        par,
         relToPar,
         pickedUp: args.pickedUp,
       });
@@ -153,7 +176,7 @@ export const submitHoleScore = mutation({
       await ctx.db.insert("holeScores", {
         liveRoundId: args.liveRoundId,
         holeNumber: args.holeNumber,
-        par: args.par,
+        par,
         score: args.score,
         relToPar,
         pickedUp: args.pickedUp,
@@ -168,6 +191,8 @@ export const submitHoleScore = mutation({
     });
   },
 });
+
+// ── Commissioner: finalize round + auto-complete event ─────────────
 
 export const completeRound = mutation({
   args: { liveRoundId: v.id("liveRounds") },

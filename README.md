@@ -65,6 +65,11 @@ design theme.
 - [x] Prompt 17: Comprehensive seed data with 8 players, full course holes, 3 completed events with points, live event with mid-round data, achievements, head-to-head records, and chat messages. E2E testing and bug fixes.
 - [x] Prompt 18: Performance optimization, error boundaries, SEO (robots.txt, sitemap.xml), custom favicon, image optimization with next/image, and Vercel deployment preparation
 
+## Documentation
+
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — module map, auth flow, and "where to change X" guide.
+- **[docs/SECURITY.md](docs/SECURITY.md)** — threat model, secrets placement, and hardening backlog.
+
 ## Deployment
 
 This app is deployed on [Vercel](https://vercel.com).

@@ -87,6 +87,7 @@ export default async function PlayerProfilePage({ params }: Props) {
 
   return (
     <>
+      {/* Safe: jsonLd is built from typed DB fields, not user-controlled HTML */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

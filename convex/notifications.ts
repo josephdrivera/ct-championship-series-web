@@ -1,7 +1,14 @@
+/**
+ * Notifications: user inbox queries/mutations (requireUser),
+ * commissioner broadcast with push (requireCommissioner),
+ * and internal fan-out mutation used by other modules.
+ */
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { requireUser, requireCommissioner } from "./helpers";
+
+// ── User inbox (requireUser) ───────────────────────────────────────
 
 export const getUserNotifications = query({
   args: { limit: v.optional(v.number()) },
@@ -80,6 +87,8 @@ export const deleteNotification = mutation({
     await ctx.db.delete(args.notificationId);
   },
 });
+
+// ── Commissioner broadcast (requireCommissioner) ───────────────────
 
 export const sendAnnouncement = mutation({
   args: {
@@ -175,7 +184,8 @@ export const deleteAnnouncementBroadcast = mutation({
   },
 });
 
-// Internal mutation for auto-notifications (called from other mutations)
+// ── Internal fan-out (server-only, not browser-callable) ───────────
+
 export const notifyAllPlayers = internalMutation({
   args: {
     title: v.string(),

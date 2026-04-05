@@ -1,6 +1,12 @@
+/**
+ * Course management: public reads (all courses, holes, stats) and
+ * commissioner mutations (create, update, bulk hole upload).
+ */
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireCommissioner } from "./helpers";
+
+// ── Queries (public) ───────────────────────────────────────────────
 
 export const getAllCourses = query({
   args: {},
@@ -20,6 +26,8 @@ export const getCourseHoles = query({
     return holes.sort((a, b) => a.holeNumber - b.holeNumber);
   },
 });
+
+// ── Commissioner mutations ─────────────────────────────────────────
 
 export const createCourse = mutation({
   args: {

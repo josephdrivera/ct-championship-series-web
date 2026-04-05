@@ -1,3 +1,7 @@
+/**
+ * Player directory: all public queries (no auth required).
+ * Lists, profiles with aggregated stats, and head-to-head records.
+ */
 import { query } from "./_generated/server";
 import { v } from "convex/values";
 

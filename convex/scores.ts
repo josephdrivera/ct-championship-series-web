@@ -1,3 +1,7 @@
+/**
+ * Score management: public read, player self-submit (requireActiveUser),
+ * admin entry + upsert (requireCommissioner), and points calculation trigger.
+ */
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import {
@@ -5,6 +9,8 @@ import {
   requireCommissioner,
   calculateAndApplyEventPoints,
 } from "./helpers";
+
+// ── Queries (public) ───────────────────────────────────────────────
 
 export const getEventScores = query({
   args: { eventId: v.id("events") },
@@ -27,6 +33,8 @@ export const getEventScores = query({
   },
 });
 
+// ── Player self-submit (requireActiveUser) ─────────────────────────
+
 export const submitScore = mutation({
   args: {
     eventId: v.id("events"),
@@ -45,7 +53,7 @@ export const submitScore = mutation({
 
     const event = await ctx.db.get(args.eventId);
     if (!event) throw new Error("Event not found");
-    if (event.status !== "active" && event.status !== "upcoming") {
+    if (event.status !== "active") {
       throw new Error("Event is not accepting scores");
     }
 
@@ -66,6 +74,8 @@ export const submitScore = mutation({
     });
   },
 });
+
+// ── Commissioner: admin score entry + points ───────────────────────
 
 export const adminSubmitScore = mutation({
   args: {

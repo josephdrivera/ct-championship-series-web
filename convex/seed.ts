@@ -1,3 +1,9 @@
+/**
+ * Seed / purge utilities — all internalMutation (server-only, not browser-callable).
+ * Run via CLI or Convex dashboard only. See docs/ARCHITECTURE.md for the module map.
+ *
+ * Exports: seedData, clearData, purgeAllData, promoteSuperAdmin
+ */
 import { internalMutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import {
