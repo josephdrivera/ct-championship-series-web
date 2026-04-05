@@ -1,7 +1,13 @@
+/**
+ * Event management: storage upload, public reads (upcoming/season/byId),
+ * and commissioner CRUD with auto-notifications on create and cancel.
+ */
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { requireCommissioner } from "./helpers";
+
+// ── Storage (commissioner) ─────────────────────────────────────────
 
 export const generateUploadUrl = mutation({
   args: {},
@@ -10,6 +16,8 @@ export const generateUploadUrl = mutation({
     return await ctx.storage.generateUploadUrl();
   },
 });
+
+// ── Queries (public) ───────────────────────────────────────────────
 
 export const getUpcomingEvents = query({
   args: { seasonId: v.id("seasons") },
@@ -35,6 +43,8 @@ export const getUpcomingEvents = query({
     );
   },
 });
+
+// ── Commissioner CRUD ──────────────────────────────────────────────
 
 export const createEvent = mutation({
   args: {

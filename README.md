@@ -65,6 +65,11 @@ design theme.
 - [x] Prompt 17: Comprehensive seed data with 8 players, full course holes, 3 completed events with points, live event with mid-round data, achievements, head-to-head records, and chat messages. E2E testing and bug fixes.
 - [x] Prompt 18: Performance optimization, error boundaries, SEO (robots.txt, sitemap.xml), custom favicon, image optimization with next/image, and Vercel deployment preparation
 
+## Documentation
+
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — module map, auth flow, and "where to change X" guide.
+- **[docs/SECURITY.md](docs/SECURITY.md)** — threat model, secrets placement, and hardening backlog.
+
 ## Deployment
 
 This app is deployed on [Vercel](https://vercel.com).
@@ -88,8 +93,8 @@ Set the following in your Vercel project settings (Settings > Environment Variab
 
 1. Push code to GitHub
 2. Connect the repository to Vercel (auto-detects Next.js)
-3. Set environment variables in the Vercel dashboard
+3. Set environment variables in the Vercel dashboard. For production, set `NEXT_PUBLIC_CONVEX_URL` to your **Convex production** deployment URL (from `npx convex deploy` output, e.g. `https://giddy-rhinoceros-119.convex.cloud`), not the dev URL from `npx convex dev`.
 4. Deploy
 5. Configure custom domain (if available)
-6. Update Clerk webhook URL to the production domain
-7. Verify Convex deployment URL matches production
+6. In Clerk, point the user webhook to your Convex **site** URL: `https://<deployment>.convex.site/clerk-webhook` (not the Vercel domain). Set the signing secret in the Convex dashboard as `CLERK_WEBHOOK_SECRET`.
+7. Verify the app loads and `NEXT_PUBLIC_SITE_URL` matches your public hostname for sitemap/robots.

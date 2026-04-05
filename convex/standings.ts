@@ -1,3 +1,7 @@
+/**
+ * Season standings: public leaderboard query and commissioner-triggered
+ * recalculation (delegates to helpers.recalculateStandings).
+ */
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireCommissioner, recalculateStandings } from "./helpers";

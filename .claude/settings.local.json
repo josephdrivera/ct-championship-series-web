@@ -24,7 +24,24 @@
       "Bash(grep:*)",
       "Bash(git check-ignore:*)",
       "Bash(find:*)",
-      "Bash(npx convex codegen:*)"
+      "Bash(npx convex codegen:*)",
+      "Bash(git -C /Users/josephrivera/Desktop/WebDev/ct-championship-series-web status)",
+      "Bash(git -C /Users/josephrivera/Desktop/WebDev/ct-championship-series-web diff --name-status)",
+      "Bash(git -C /Users/josephrivera/Desktop/WebDev/ct-championship-series-web show HEAD:middleware.ts)",
+      "Bash(git -C /Users/josephrivera/Desktop/WebDev/ct-championship-series-web log --oneline -10 -- middleware.ts proxy.ts)",
+      "Bash(git -C /Users/josephrivera/Desktop/WebDev/ct-championship-series-web diff middleware.ts)",
+      "Bash(xargs ls:*)",
+      "Bash(git -C /Users/josephrivera/Desktop/WebDev/ct-championship-series-web log --oneline -1)",
+      "Bash(git -C /Users/josephrivera/Desktop/WebDev/ct-championship-series-web log --oneline -5)",
+      "Bash(git -C /Users/josephrivera/Desktop/WebDev/ct-championship-series-web diff HEAD -- middleware.ts)",
+      "Bash(git -C /Users/josephrivera/Desktop/WebDev/ct-championship-series-web log --oneline main..dev)",
+      "Bash(git -C /Users/josephrivera/Desktop/WebDev/ct-championship-series-web branch -a)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh auth:*)",
+      "Bash(git remote:*)",
+      "Bash(npm install:*)"
     ]
   }
 }

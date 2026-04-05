@@ -1,7 +1,12 @@
+/**
+ * Shared auth gates and scoring engine used by all Convex mutations.
+ * Always call one of the require* helpers instead of raw ctx.auth checks.
+ * See docs/ARCHITECTURE.md for the full module map.
+ */
 import { QueryCtx, MutationCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 
-// Points awarded by finish position (1st through 11th)
+// ── Scoring constants ──────────────────────────────────────────────
 const POINTS_TABLE = [100, 85, 72, 62, 54, 48, 43, 39, 36, 33, 30];
 const DNF_POINTS = 15;
 
@@ -64,6 +69,8 @@ export async function requireSuperAdmin(
   if (!user.isSuperAdmin) throw new Error("Super admin access required");
   return user;
 }
+
+// ── Scoring engine ─────────────────────────────────────────────────
 
 /**
  * Calculates and assigns points for all scores in an event.

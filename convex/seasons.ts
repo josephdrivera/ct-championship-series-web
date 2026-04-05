@@ -1,7 +1,13 @@
+/**
+ * Season lifecycle: public reads (active, all, champion history) and
+ * commissioner mutations (create, update status, toggle live mode).
+ */
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { requireCommissioner } from "./helpers";
+
+// ── Queries (public) ───────────────────────────────────────────────
 
 export const getActiveSeason = query({
   args: {},
@@ -41,6 +47,8 @@ export const getAllSeasons = query({
     return seasons.sort((a, b) => b.year - a.year);
   },
 });
+
+// ── Commissioner mutations ─────────────────────────────────────────
 
 export const createSeason = mutation({
   args: {

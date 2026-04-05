@@ -1,3 +1,9 @@
+/**
+ * Seed / purge utilities — all internalMutation (server-only, not browser-callable).
+ * Run via CLI or Convex dashboard only. See docs/ARCHITECTURE.md for the module map.
+ *
+ * Exports: seedData, clearData, purgeAllData, promoteSuperAdmin
+ */
 import { internalMutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import {
@@ -502,6 +508,7 @@ export const clearData = internalMutation({
  * Use this before going live to start completely fresh.
  * Run via CLI: npx convex run seed:purgeAllData
  * WARNING: This is destructive and irreversible.
+ * Includes notifications and pushSubscriptions so no rows are left behind.
  */
 export const purgeAllData = internalMutation({
   args: {},
@@ -516,6 +523,8 @@ export const purgeAllData = internalMutation({
       "achievements",
       "headToHead",
       "messages",
+      "pushSubscriptions",
+      "notifications",
       "photos",
       "courseHoles",
       "events",

@@ -1,3 +1,8 @@
+/**
+ * Web Push subscription management (requireUser for all endpoints).
+ * Pairs with pushNotifications.ts (server-side send) and
+ * NEXT_PUBLIC_VAPID_PUBLIC_KEY on the client.
+ */
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireUser } from "./helpers";

@@ -1,3 +1,8 @@
+/**
+ * Web Push delivery — "use node" action (server-only, not browser-callable).
+ * Requires VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT in Convex env.
+ * Silently skips if VAPID keys are not configured.
+ */
 "use node";
 
 import { internalAction } from "./_generated/server";
