@@ -4,7 +4,7 @@
  */
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
-import { requireSuperAdmin, requireCommissioner, requireUser } from "./helpers";
+import { requireSuperAdmin, requireCommissioner } from "./helpers";
 
 // ── Queries (public, no auth required) ─────────────────────────────
 

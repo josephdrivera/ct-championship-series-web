@@ -109,10 +109,13 @@ function ImageUploadField({
       <div className="mt-1 flex items-center gap-4">
         {displayUrl ? (
           <div className="relative">
-            <img
+            <Image
               src={displayUrl}
               alt="Course preview"
+              width={128}
+              height={80}
               className="h-20 w-32 rounded-lg object-cover"
+              unoptimized={displayUrl.startsWith("blob:")}
             />
             <button
               type="button"

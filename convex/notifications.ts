@@ -124,7 +124,7 @@ export const sendAnnouncement = mutation({
 export const getSentAnnouncements = query({
   args: {},
   handler: async (ctx) => {
-    const sender = await requireCommissioner(ctx);
+    await requireCommissioner(ctx);
 
     const announcements = await ctx.db
       .query("notifications")
