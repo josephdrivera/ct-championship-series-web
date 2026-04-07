@@ -5,6 +5,7 @@
  * Exports: seedData, clearData, purgeAllData, promoteSuperAdmin
  */
 import { internalMutation } from "./_generated/server";
+import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 import {
   calculateAndApplyEventPoints,
@@ -544,24 +545,50 @@ export const purgeAllData = internalMutation({
 });
 
 /**
- * Promotes the first user to super admin.
- * Run via CLI: npx convex run seed:promoteSuperAdmin
- * Sign in first to create your user.
+ * Promotes a user to commissioner + super admin.
+ * Prefer `email` (matches Convex `users.email`, synced from Clerk). Omit `email` only for
+ * local/bootstrap when a single test user exists (first document wins — order is undefined).
+ *
+ * Example: npx convex run seed:promoteSuperAdmin '{"email":"josephddev@gmail.com"}'
  */
 export const promoteSuperAdmin = internalMutation({
-  args: {},
-  handler: async (ctx) => {
+  args: { email: v.optional(v.string()) },
+  handler: async (ctx, args) => {
     const users = await ctx.db.query("users").collect();
     if (users.length === 0) {
-      throw new Error("No users found. Sign in first to create your user.");
+      throw new Error("No users found. Sign in once so Clerk creates your Convex user.");
     }
 
-    const firstUser = users[0];
-    await ctx.db.patch(firstUser._id, {
+    let target;
+    const raw = args.email?.trim();
+    if (raw) {
+      const normalized = raw.toLowerCase();
+      target = users.find(
+        (u) => (u.email ?? "").trim().toLowerCase() === normalized
+      );
+      if (!target) {
+        throw new Error(
+          `No user with email "${raw}". Sign in with that account so the Clerk webhook syncs email to Convex, then run again.`
+        );
+      }
+    } else {
+      if (users.length > 1) {
+        throw new Error(
+          "Multiple users exist; pass email: npx convex run seed:promoteSuperAdmin '{\"email\":\"you@example.com\"}'"
+        );
+      }
+      target = users[0];
+    }
+
+    await ctx.db.patch(target._id, {
       isCommissioner: true,
       isSuperAdmin: true,
     });
 
-    return { promoted: firstUser.name, userId: firstUser._id };
+    return {
+      promoted: target.name,
+      userId: target._id,
+      email: target.email ?? null,
+    };
   },
 });
