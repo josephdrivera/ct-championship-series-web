@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reminder: {{EVENT_TITLE}} — {{APP_NAME}}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#FDF8F0;font-family:Georgia,'Times New Roman',serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FDF8F0;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+          <tr>
+            <td style="background-color:#002E1F;border-radius:12px 12px 0 0;padding:32px 40px;text-align:center;">
+              <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:11px;color:#F2C75C;text-transform:uppercase;letter-spacing:3px;margin-bottom:12px;">Check in</div>
+              <div style="font-family:Georgia,'Times New Roman',serif;font-size:36px;font-weight:bold;color:#FDF8F0;">{{EVENT_TITLE}}</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#F2C75C;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="background-color:#FFFFFF;padding:40px 40px;">
+              <p style="margin:0 0 16px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:24px;color:#333333;"><strong style="color:#002E1F;">When:</strong> {{EVENT_WHEN}}</p>
+              <p style="margin:0 0 16px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:16px;line-height:26px;color:#333333;">Are you planning to play? Please check in so we can plan for the right number of players.</p>
+              <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:16px;line-height:26px;color:#333333;">{{DETAILS_HTML}}</div>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px auto 0;">
+                <tr>
+                  <td style="border-radius:8px;background-color:#006747;">
+                    <a href="{{CHECK_IN_URL}}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 36px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:8px;">Check in to play</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:20px 0 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#666666;">You can also <a href="{{EVENT_PAGE_URL}}" style="color:#006747;">view the event page</a> on the site.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#002E1F;border-radius:0 0 12px 12px;padding:24px 40px;text-align:center;">
+              <p style="margin:0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:11px;color:#FDF8F0;opacity:0.55;">{{APP_NAME}} · <a href="{{SITE_URL}}" style="color:#F2C75C;text-decoration:none;">Visit site</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

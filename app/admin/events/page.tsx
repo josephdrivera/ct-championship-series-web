@@ -359,6 +359,92 @@ function CreateEventForm({
   );
 }
 
+function EventCheckInsBlock({ eventId }: { eventId: Id<"events"> }) {
+  const checkIns = useQuery(api.checkIns.getCheckInsForEvent, { eventId });
+  const [sending, setSending] = useState(false);
+
+  async function sendReminders() {
+    setSending(true);
+    try {
+      const res = await fetch("/api/events/remind", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId }),
+      });
+      const data = (await res.json()) as {
+        success?: boolean;
+        sent?: number;
+        skippedNoEmail?: string[];
+        error?: string;
+        errors?: string[];
+      };
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed to send reminders");
+        return;
+      }
+      const skipped = data.skippedNoEmail?.length
+        ? ` (${data.skippedNoEmail.length} skipped — no email on file)`
+        : "";
+      toast.success(
+        `Sent ${data.sent ?? 0} reminder email(s)${skipped}`
+      );
+      if (data.errors?.length) {
+        toast.error(data.errors[0]);
+      }
+    } catch {
+      toast.error("Failed to send reminders");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 rounded-lg border border-sand bg-cream/50 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="text-sm font-semibold text-dark-green">
+          Check-ins
+          {checkIns !== undefined && (
+            <span className="ml-2 font-normal text-dark-green/60">
+              ({checkIns.length} playing)
+            </span>
+          )}
+        </h4>
+        <button
+          type="button"
+          onClick={sendReminders}
+          disabled={sending}
+          className="rounded-full bg-augusta px-3 py-1.5 text-xs font-semibold text-cream transition-colors hover:bg-deep-green disabled:opacity-50"
+        >
+          {sending ? "Sending…" : "Email check-in reminders"}
+        </button>
+      </div>
+      {checkIns === undefined ? (
+        <p className="mt-2 text-xs text-dark-green/50">Loading…</p>
+      ) : checkIns.length === 0 ? (
+        <p className="mt-2 text-xs text-dark-green/60">
+          No one has checked in yet. Send reminders so players can confirm they&apos;re playing.
+        </p>
+      ) : (
+        <ul className="mt-3 max-h-40 space-y-1 overflow-y-auto text-sm text-dark-green/80">
+          {checkIns.map((row) => (
+            <li key={row.userId}>
+              {row.name}
+              <span className="ml-2 text-xs text-dark-green/40">
+                {new Date(row.checkedInAt).toLocaleString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function EditEventForm({
   event,
   existingImageUrl,
@@ -670,6 +756,8 @@ export default function AdminEventsPage() {
                         onClose={() => setEditingEventId(null)}
                       />
                     )}
+
+                    <EventCheckInsBlock eventId={event._id} />
                   </div>
                 </div>
               ))}

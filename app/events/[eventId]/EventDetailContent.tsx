@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Preloaded, usePreloadedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { formatPoints } from "@/lib/format";
+import MyEventScoreForm from "@/components/events/MyEventScoreForm";
 
 const FORMAT_LABELS: Record<string, string> = {
   stroke: "Stroke Play",
@@ -134,6 +135,10 @@ export default function EventDetailContent({
             </span>
           )}
         </div>
+
+        {event.status === "active" && (
+          <MyEventScoreForm eventId={event._id} />
+        )}
 
         {/* Scorecard Table */}
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm">

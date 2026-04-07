@@ -15,6 +15,8 @@ type ClerkUserWebhookEvent = {
     first_name?: string | null;
     last_name?: string | null;
     image_url?: string | null;
+    primary_email_address_id?: string | null;
+    email_addresses?: { id: string; email_address: string }[];
   };
 };
 
@@ -56,14 +58,26 @@ http.route({
     const eventType = event.type;
 
     if (eventType === "user.created" || eventType === "user.updated") {
-      const { id, first_name, last_name, image_url } = event.data;
+      const { id, first_name, last_name, image_url, email_addresses, primary_email_address_id } =
+        event.data;
       const name =
         [first_name, last_name].filter(Boolean).join(" ") || "Unknown";
+
+      let primaryEmail: string | undefined;
+      if (email_addresses && email_addresses.length > 0) {
+        const primary =
+          primary_email_address_id !== undefined &&
+          primary_email_address_id !== null
+            ? email_addresses.find((e) => e.id === primary_email_address_id)
+            : undefined;
+        primaryEmail = primary?.email_address ?? email_addresses[0].email_address;
+      }
 
       await ctx.runMutation(internal.users.upsertFromClerk, {
         clerkId: id,
         name,
         photo: image_url ?? undefined,
+        email: primaryEmail,
       });
     }
 

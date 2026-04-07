@@ -1,13 +1,13 @@
 /**
  * POST /api/invite — Super-admin only.
- * Creates a Clerk invitation, then sends optional branded email via Resend (Vercel env: RESEND_API_KEY, EMAIL_FROM).
- * Authorization: Clerk session + JWT template "convex" for Convex fetchQuery(api.users.getCurrentUser).
+ * Creates a Clerk invitation with notify: false, then sends `templates/emails/invitation.html` via Resend (INVITATION_URL from Clerk).
+ * Requires RESEND_API_KEY + verified EMAIL_FROM. Authorization: Clerk session + JWT "convex" for getCurrentUser.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { clerkClient, auth } from "@clerk/nextjs/server";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
-import { sendInviteEmail } from "@/lib/email";
+import { isResendConfigured, sendInvitationEmail } from "@/lib/email";
 
 function invitationErrorMessage(err: unknown): string {
   if (err && typeof err === "object" && "errors" in err) {
@@ -54,21 +54,52 @@ export async function POST(request: NextRequest) {
 
   const signInUrl = `${request.nextUrl.origin}/sign-in`;
 
+  if (!isResendConfigured()) {
+    return NextResponse.json(
+      {
+        error:
+          "Email is not configured (set RESEND_API_KEY and EMAIL_FROM on the server).",
+      },
+      { status: 503 }
+    );
+  }
+
   try {
-    // Create the Clerk invitation (handles sign-up flow)
     const client = await clerkClient();
     const invitation = await client.invitations.createInvitation({
       emailAddress,
       redirectUrl: signInUrl,
+      notify: false,
     });
 
-    // Send the branded welcome email
+    const invitationUrl = invitation.url;
+    if (!invitationUrl) {
+      return NextResponse.json(
+        {
+          error:
+            "Invitation was created but Clerk did not return an invitation URL. Try again or check the Clerk dashboard.",
+        },
+        { status: 502 }
+      );
+    }
+
     try {
-      await sendInviteEmail({ to: emailAddress, signInUrl });
+      await sendInvitationEmail({
+        to: emailAddress,
+        invitationUrl,
+      });
     } catch (emailErr) {
-      // Log but don't fail the invitation if the email fails —
-      // Clerk's default email still goes out as a fallback
-      console.error("Branded invite email failed:", emailErr);
+      console.error("Resend invitation email failed:", emailErr);
+      return NextResponse.json(
+        {
+          error:
+            emailErr instanceof Error
+              ? emailErr.message
+              : "Failed to send invitation email",
+          invitationId: invitation.id,
+        },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({ success: true, id: invitation.id });

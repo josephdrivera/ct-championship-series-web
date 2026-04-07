@@ -5,12 +5,30 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import {
+  getCurrentUserOrNull,
   requireActiveUser,
   requireCommissioner,
   calculateAndApplyEventPoints,
 } from "./helpers";
 
 // ── Queries (public) ───────────────────────────────────────────────
+
+export const getMyEventScore = query({
+  args: { eventId: v.id("events") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrNull(ctx);
+    if (!user) return null;
+
+    const score = await ctx.db
+      .query("scores")
+      .withIndex("by_event_and_user", (q) =>
+        q.eq("eventId", args.eventId).eq("userId", user._id)
+      )
+      .unique();
+
+    return score ?? null;
+  },
+});
 
 export const getEventScores = query({
   args: { eventId: v.id("events") },
@@ -72,6 +90,53 @@ export const submitScore = mutation({
       pointsEarned: 0,
       finishPosition: 0,
     });
+  },
+});
+
+export const updateMyScore = mutation({
+  args: {
+    eventId: v.id("events"),
+    gross: v.number(),
+    net: v.number(),
+    handicap: v.number(),
+    birdies: v.number(),
+    eagles: v.number(),
+    pars: v.number(),
+    bogeys: v.number(),
+    doublePlus: v.number(),
+    pickups: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const user = await requireActiveUser(ctx);
+
+    const event = await ctx.db.get(args.eventId);
+    if (!event) throw new Error("Event not found");
+    if (event.status !== "active") {
+      throw new Error("Event is not accepting score changes");
+    }
+
+    const existing = await ctx.db
+      .query("scores")
+      .withIndex("by_event_and_user", (q) =>
+        q.eq("eventId", args.eventId).eq("userId", user._id)
+      )
+      .unique();
+    if (!existing) throw new Error("No score to update — submit a score first");
+
+    await ctx.db.patch(existing._id, {
+      gross: args.gross,
+      net: args.net,
+      handicap: args.handicap,
+      birdies: args.birdies,
+      eagles: args.eagles,
+      pars: args.pars,
+      bogeys: args.bogeys,
+      doublePlus: args.doublePlus,
+      pickups: args.pickups,
+      pointsEarned: 0,
+      finishPosition: 0,
+    });
+    return existing._id;
   },
 });
 

@@ -49,6 +49,8 @@ export async function requireActiveUser(
 
 /**
  * Returns the current user, asserting commissioner or super admin access.
+ * Does not grant role management: `isCommissioner` / `isSuperAdmin` are only
+ * changed via mutations that call `requireSuperAdmin`.
  */
 export async function requireCommissioner(
   ctx: QueryCtx | MutationCtx

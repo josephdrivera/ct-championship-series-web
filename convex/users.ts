@@ -1,10 +1,14 @@
 /**
- * User management: public queries, role/handicap mutations (commissioner+),
- * account lifecycle (suspend/delete — super admin), and Clerk webhook sync.
+ * User management: public queries, profile/handicap mutations (commissioner+),
+ * role changes and hard deletes (super admin only), suspend/unsuspend (commissioner+),
+ * and Clerk webhook sync.
  */
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
-import { requireSuperAdmin, requireCommissioner } from "./helpers";
+import {
+  requireSuperAdmin,
+  requireCommissioner,
+} from "./helpers";
 
 // ── Queries (public, no auth required) ─────────────────────────────
 
@@ -26,12 +30,32 @@ export const getCurrentUser = query({
 export const getUser = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.userId);
+    const user = await ctx.db.get(args.userId);
+    if (!user) return null;
+    const { email: _email, ...publicUser } = user;
+    return publicUser;
   },
 });
 
-// ── Admin mutations (commissioner / super admin) ───────────────────
+/** Commissioner-only: members with optional email (for reminder fan-out). */
+export const listLeagueMembersWithEmail = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireCommissioner(ctx);
+    const users = await ctx.db.query("users").collect();
+    return users
+      .filter((u) => !u.isSuspended)
+      .map((u) => ({
+        userId: u._id,
+        name: u.name,
+        email: u.email ?? null,
+      }));
+  },
+});
 
+// ── Super admin only (commissioners cannot assign admin roles) ─────
+
+/** Sets `isCommissioner` / `isSuperAdmin`. Commissioners have no API path to change these fields. */
 export const updateUserRole = mutation({
   args: {
     userId: v.id("users"),
@@ -49,113 +73,6 @@ export const updateUserRole = mutation({
     if (args.isSuperAdmin !== undefined) patch.isSuperAdmin = args.isSuperAdmin;
 
     await ctx.db.patch(args.userId, patch);
-  },
-});
-
-export const updatePlayer = mutation({
-  args: {
-    userId: v.id("users"),
-    name: v.optional(v.string()),
-    handicap: v.optional(v.number()),
-  },
-  handler: async (ctx, args) => {
-    await requireCommissioner(ctx);
-
-    const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
-
-    const updates: Record<string, string | number> = {};
-    if (args.name !== undefined) updates.name = args.name;
-    if (args.handicap !== undefined) updates.handicap = args.handicap;
-
-    if (Object.keys(updates).length > 0) {
-      await ctx.db.patch(args.userId, updates);
-    }
-  },
-});
-
-// ── Player self-service mutations ──────────────────────────────────
-
-export const markWelcomeSeen = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Authentication required");
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-    if (!user) throw new Error("User not found");
-
-    await ctx.db.patch(user._id, { hasSeenWelcome: true });
-  },
-});
-
-export const bulkUpdateHandicaps = mutation({
-  args: {
-    updates: v.array(
-      v.object({
-        userId: v.id("users"),
-        handicap: v.number(),
-      })
-    ),
-  },
-  handler: async (ctx, args) => {
-    await requireCommissioner(ctx);
-
-    for (const { userId, handicap } of args.updates) {
-      await ctx.db.patch(userId, { handicap });
-    }
-  },
-});
-
-// ── Account lifecycle (commissioner / super admin) ─────────────────
-
-export const suspendPlayer = mutation({
-  args: { userId: v.id("users") },
-  handler: async (ctx, args) => {
-    const admin = await requireCommissioner(ctx);
-    if (admin._id === args.userId) throw new Error("You cannot suspend yourself");
-
-    const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
-
-    await ctx.db.patch(args.userId, { isSuspended: true });
-
-    // Notify the suspended player
-    await ctx.db.insert("notifications", {
-      userId: args.userId,
-      title: "Account Suspended",
-      body: "Your account has been suspended. Contact a league administrator for more information.",
-      type: "system",
-      isRead: false,
-      senderId: admin._id,
-      createdAt: Date.now(),
-    });
-  },
-});
-
-export const unsuspendPlayer = mutation({
-  args: { userId: v.id("users") },
-  handler: async (ctx, args) => {
-    const admin = await requireCommissioner(ctx);
-
-    const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
-
-    await ctx.db.patch(args.userId, { isSuspended: false });
-
-    // Notify the reinstated player
-    await ctx.db.insert("notifications", {
-      userId: args.userId,
-      title: "Account Reinstated",
-      body: "Your account has been reinstated. Welcome back to the league!",
-      type: "system",
-      isRead: false,
-      senderId: admin._id,
-      createdAt: Date.now(),
-    });
   },
 });
 
@@ -266,6 +183,115 @@ export const deletePlayer = mutation({
   },
 });
 
+// ── Commissioner or super admin ───────────────────────────────────
+
+export const updatePlayer = mutation({
+  args: {
+    userId: v.id("users"),
+    name: v.optional(v.string()),
+    handicap: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    await requireCommissioner(ctx);
+
+    const user = await ctx.db.get(args.userId);
+    if (!user) throw new Error("User not found");
+
+    const updates: Record<string, string | number> = {};
+    if (args.name !== undefined) updates.name = args.name;
+    if (args.handicap !== undefined) updates.handicap = args.handicap;
+
+    if (Object.keys(updates).length > 0) {
+      await ctx.db.patch(args.userId, updates);
+    }
+  },
+});
+
+// ── Player self-service mutations ──────────────────────────────────
+
+export const markWelcomeSeen = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Authentication required");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!user) throw new Error("User not found");
+
+    await ctx.db.patch(user._id, { hasSeenWelcome: true });
+  },
+});
+
+export const bulkUpdateHandicaps = mutation({
+  args: {
+    updates: v.array(
+      v.object({
+        userId: v.id("users"),
+        handicap: v.number(),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    await requireCommissioner(ctx);
+
+    for (const { userId, handicap } of args.updates) {
+      await ctx.db.patch(userId, { handicap });
+    }
+  },
+});
+
+// ── Account lifecycle (commissioner / super admin) ─────────────────
+
+export const suspendPlayer = mutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const admin = await requireCommissioner(ctx);
+    if (admin._id === args.userId) throw new Error("You cannot suspend yourself");
+
+    const user = await ctx.db.get(args.userId);
+    if (!user) throw new Error("User not found");
+
+    await ctx.db.patch(args.userId, { isSuspended: true });
+
+    // Notify the suspended player
+    await ctx.db.insert("notifications", {
+      userId: args.userId,
+      title: "Account Suspended",
+      body: "Your account has been suspended. Contact a league administrator for more information.",
+      type: "system",
+      isRead: false,
+      senderId: admin._id,
+      createdAt: Date.now(),
+    });
+  },
+});
+
+export const unsuspendPlayer = mutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const admin = await requireCommissioner(ctx);
+
+    const user = await ctx.db.get(args.userId);
+    if (!user) throw new Error("User not found");
+
+    await ctx.db.patch(args.userId, { isSuspended: false });
+
+    // Notify the reinstated player
+    await ctx.db.insert("notifications", {
+      userId: args.userId,
+      title: "Account Reinstated",
+      body: "Your account has been reinstated. Welcome back to the league!",
+      type: "system",
+      isRead: false,
+      senderId: admin._id,
+      createdAt: Date.now(),
+    });
+  },
+});
+
 // ── Internal: Clerk webhook sync (server-only, not browser-callable) ──
 
 export const upsertFromClerk = internalMutation({
@@ -273,6 +299,7 @@ export const upsertFromClerk = internalMutation({
     clerkId: v.string(),
     name: v.string(),
     photo: v.optional(v.string()),
+    email: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const existingUser = await ctx.db
@@ -284,6 +311,7 @@ export const upsertFromClerk = internalMutation({
       await ctx.db.patch(existingUser._id, {
         name: args.name,
         ...(args.photo !== undefined && { photo: args.photo }),
+        ...(args.email !== undefined && { email: args.email }),
       });
       return existingUser._id;
     } else {
@@ -294,6 +322,7 @@ export const upsertFromClerk = internalMutation({
         joinedYear: new Date().getFullYear(),
         isCommissioner: false,
         isSuperAdmin: false,
+        ...(args.email !== undefined && { email: args.email }),
       });
       return userId;
     }

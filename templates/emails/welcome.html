@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome — {{APP_NAME}}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#FDF8F0;font-family:Georgia,'Times New Roman',serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FDF8F0;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+          <tr>
+            <td style="background-color:#002E1F;border-radius:12px 12px 0 0;padding:48px 40px;text-align:center;">
+              <div style="font-family:Georgia,'Times New Roman',serif;font-size:56px;font-weight:bold;color:#F2C75C;letter-spacing:4px;">CS</div>
+              <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:11px;color:#FDF8F0;text-transform:uppercase;letter-spacing:4px;margin-top:8px;opacity:0.85;">Championship Series</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#F2C75C;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="background-color:#FFFFFF;padding:48px 40px;">
+              <h1 style="margin:0 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:28px;color:#002E1F;font-weight:700;">You're in, {{USER_NAME}}!</h1>
+              <div style="width:48px;height:3px;background-color:#F2C75C;margin:0 0 24px;border-radius:2px;"></div>
+              <p style="margin:0 0 20px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:16px;line-height:26px;color:#333333;">Your account for {{APP_NAME}} is ready. Sign in to see the schedule, standings, and your league profile.</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                <tr>
+                  <td style="border-radius:8px;background-color:#006747;">
+                    <a href="{{SIGN_IN_URL}}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:16px 48px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:8px;letter-spacing:0.5px;">Go to {{APP_NAME}}</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:28px 0 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#999999;text-align:center;">Or open: <a href="{{SIGN_IN_URL}}" style="color:#006747;word-break:break-all;">{{SIGN_IN_URL}}</a></p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#002E1F;border-radius:0 0 12px 12px;padding:32px 40px;text-align:center;">
+              <p style="margin:0 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:bold;color:#F2C75C;">{{APP_NAME}}</p>
+              <p style="margin:0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#FDF8F0;opacity:0.6;">Connecticut's Premier Golf League</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

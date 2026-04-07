@@ -5,6 +5,8 @@ export default defineSchema({
   users: defineTable({
     clerkId: v.string(),
     name: v.string(),
+    /** Synced from Clerk for transactional email (reminders, commissioner alerts). Not exposed on public profile queries. */
+    email: v.optional(v.string()),
     handicap: v.optional(v.number()),
     photo: v.optional(v.string()),
     joinedYear: v.number(),
@@ -211,4 +213,19 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_endpoint", ["endpoint"]),
+
+  /** Player confirmed attendance for an upcoming event (check-in from email or site). */
+  eventCheckIns: defineTable({
+    eventId: v.id("events"),
+    userId: v.id("users"),
+    checkedInAt: v.number(),
+  })
+    .index("by_event", ["eventId"])
+    .index("by_event_and_user", ["eventId", "userId"]),
+
+  /** One row per user; updated by heartbeat while they have the site open. */
+  presence: defineTable({
+    userId: v.id("users"),
+    lastSeenAt: v.number(),
+  }).index("by_user", ["userId"]),
 });

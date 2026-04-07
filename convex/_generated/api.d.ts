@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as checkIns from "../checkIns.js";
+import type * as checkInsEmail from "../checkInsEmail.js";
 import type * as courses from "../courses.js";
 import type * as events from "../events.js";
 import type * as helpers from "../helpers.js";
@@ -15,6 +17,7 @@ import type * as history from "../history.js";
 import type * as http from "../http.js";
 import type * as notifications from "../notifications.js";
 import type * as players from "../players.js";
+import type * as presence from "../presence.js";
 import type * as pushNotifications from "../pushNotifications.js";
 import type * as pushNotificationsHelpers from "../pushNotificationsHelpers.js";
 import type * as pushSubscriptions from "../pushSubscriptions.js";
@@ -32,6 +35,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  checkIns: typeof checkIns;
+  checkInsEmail: typeof checkInsEmail;
   courses: typeof courses;
   events: typeof events;
   helpers: typeof helpers;
@@ -39,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   notifications: typeof notifications;
   players: typeof players;
+  presence: typeof presence;
   pushNotifications: typeof pushNotifications;
   pushNotificationsHelpers: typeof pushNotificationsHelpers;
   pushSubscriptions: typeof pushSubscriptions;

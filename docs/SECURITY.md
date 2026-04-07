@@ -14,6 +14,10 @@ All Convex mutations that modify data use centralized auth helpers in
 | `requireCommissioner` | Commissioner **or** super admin | Event/course/season CRUD, admin score entry, standings, announcements, suspend/unsuspend |
 | `requireSuperAdmin` | Super admin only | `updateUserRole`, `deletePlayer`, invite API route |
 
+Commissioners **cannot** assign commissioner or super-admin roles: `isCommissioner` and
+`isSuperAdmin` are only writable through `users.updateUserRole`, which calls
+`requireSuperAdmin`. No other public mutation patches those fields.
+
 Every public `mutation` export was audited; none bypass these helpers.
 `internalMutation` / `internalAction` functions (`seed.*`, `upsertFromClerk`,
 `notifyAllPlayers`, `sendPushToAll`, etc.) are server-only and cannot be called

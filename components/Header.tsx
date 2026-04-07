@@ -7,6 +7,7 @@ import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import NotificationBell from "./notifications/NotificationBell";
+import OnlineNow from "./presence/OnlineNow";
 
 function AdminLink() {
   const currentUser = useQuery(api.users.getCurrentUser);
@@ -72,6 +73,7 @@ export default function Header() {
               </SignedOut>
               <SignedIn>
                 <div className="flex items-center gap-4">
+                  <OnlineNow />
                   <AdminLink />
                   <NotificationBell />
                   <UserButton
@@ -156,7 +158,8 @@ export default function Header() {
                   </Link>
                 </SignedOut>
                 <SignedIn>
-                  <div className="flex items-center gap-4 px-3">
+                  <div className="flex flex-wrap items-center gap-3 px-3">
+                    <OnlineNow />
                     <AdminLink />
                     <NotificationBell />
                     <UserButton

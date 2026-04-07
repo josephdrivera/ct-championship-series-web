@@ -132,7 +132,7 @@ export default function AdminLayout({
             Not Authorized
           </h1>
           <p className="mt-3 text-dark-green/60">
-            You must be a commissioner to access the admin area.
+            You need commissioner or super admin access to use the admin area.
           </p>
           <Link
             href="/"

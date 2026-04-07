@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import CookieBanner from "@/components/CookieBanner";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
+import PresenceHeartbeat from "@/components/presence/PresenceHeartbeat";
 
 const playfairDisplay = Playfair_Display({
   variable: "--font-playfair-display",
@@ -48,6 +49,7 @@ export default function RootLayout({
         className={`${playfairDisplay.variable} ${dmSans.variable} font-sans antialiased`}
       >
         <ConvexClientProvider>
+          <PresenceHeartbeat />
           <Toaster
             position="top-right"
             toastOptions={{
