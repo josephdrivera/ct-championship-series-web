@@ -20,6 +20,9 @@
 # production
 /build
 
+# local tool settings
+.claude/
+
 # misc
 .DS_Store
 *.pem
