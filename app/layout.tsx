@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
@@ -7,6 +8,7 @@ import CookieBanner from "@/components/CookieBanner";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
 import PresenceHeartbeat from "@/components/presence/PresenceHeartbeat";
+import { getClerkPublishableKey } from "@/lib/clerk-server";
 
 const playfairDisplay = Playfair_Display({
   variable: "--font-playfair-display",
@@ -35,11 +37,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  await connection();
+  const clerkPublishableKey = getClerkPublishableKey();
+
   return (
     <html lang="en">
       <head>
@@ -48,7 +53,7 @@ export default function RootLayout({
       <body
         className={`${playfairDisplay.variable} ${dmSans.variable} font-sans antialiased`}
       >
-        <ConvexClientProvider>
+        <ConvexClientProvider clerkPublishableKey={clerkPublishableKey}>
           <PresenceHeartbeat />
           <Toaster
             position="top-right"
@@ -60,7 +65,7 @@ export default function RootLayout({
               },
             }}
           />
-          <Header />
+          <Header clerkPublishableKey={clerkPublishableKey} />
           {children}
           <CookieBanner />
           <ServiceWorkerRegistrar />

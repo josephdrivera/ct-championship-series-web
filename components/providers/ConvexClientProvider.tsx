@@ -18,21 +18,21 @@ const convex = new ConvexReactClient(
  */
 export default function ConvexClientProvider({
   children,
+  clerkPublishableKey,
 }: {
   children: ReactNode;
+  /** From `app/layout.tsx` via `getClerkPublishableKey()` (server runtime). */
+  clerkPublishableKey?: string;
 }) {
-  // If Clerk keys are not configured, provide Convex without auth
-  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-    return <ConvexProvider client={convex}>{children}</ConvexProvider>;
-  }
+  const key = clerkPublishableKey?.trim() || null;
 
-  return (
-    <ClerkProvider
-      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-    >
+  return key ? (
+    <ClerkProvider publishableKey={key}>
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         {children}
       </ConvexProviderWithClerk>
     </ClerkProvider>
+  ) : (
+    <ConvexProvider client={convex}>{children}</ConvexProvider>
   );
 }

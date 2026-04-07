@@ -1,5 +1,15 @@
 import type { NextConfig } from "next";
 
+// NEXT_PUBLIC_* is inlined at build time. Missing it in production deploys a site with no Sign In UI.
+if (
+  process.env.VERCEL_ENV === "production" &&
+  !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim()
+) {
+  throw new Error(
+    "Production build requires NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY. Add it in Vercel → Settings → Environment Variables (Production), then redeploy."
+  );
+}
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {

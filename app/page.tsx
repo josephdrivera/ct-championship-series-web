@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { preloadQuery, preloadedQueryResult } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import HomeContent from "./HomeContent";
@@ -31,6 +32,14 @@ export default async function Home() {
           <p className="mt-6 text-lg text-cream/60">
             Your private tour experience
           </p>
+          <div className="mt-10">
+            <Link
+              href="/sign-in"
+              className="inline-block rounded-full border border-cream/30 px-8 py-3.5 text-sm font-semibold text-cream transition-colors hover:border-cream hover:bg-cream/10"
+            >
+              Sign In
+            </Link>
+          </div>
         </div>
       </main>
     );

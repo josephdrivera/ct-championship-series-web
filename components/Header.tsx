@@ -29,9 +29,15 @@ const navLinks = [
   { href: "/history", label: "History" },
 ];
 
-export default function Header() {
+export default function Header({
+  clerkPublishableKey,
+}: {
+  /** From root layout (server); avoids relying on client-inlined NEXT_PUBLIC_* alone. */
+  clerkPublishableKey?: string;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const clerkKey = clerkPublishableKey?.trim() || null;
 
   return (
     <header className="bg-dark-green">
@@ -61,7 +67,7 @@ export default function Header() {
               </Link>
             </li>
           ))}
-          {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && (
+          {clerkKey && (
             <li>
               <SignedOut>
                 <Link
@@ -146,7 +152,7 @@ export default function Header() {
                 </Link>
               </li>
             ))}
-            {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && (
+            {clerkKey && (
               <li className="pt-3 border-t border-cream/10">
                 <SignedOut>
                   <Link
