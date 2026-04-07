@@ -11,7 +11,9 @@ import OnlineNow from "./presence/OnlineNow";
 
 function AdminLink() {
   const currentUser = useQuery(api.users.getCurrentUser);
-  if (!currentUser?.isCommissioner && !currentUser?.isSuperAdmin) return null;
+  const isAdmin =
+    currentUser?.isCommissioner === true || currentUser?.isSuperAdmin === true;
+  if (!isAdmin) return null;
   return (
     <Link
       href="/admin"
