@@ -14,17 +14,19 @@ SEO basics include `sitemap.xml` and `robots.txt`. A PWA manifest and related as
 
 ## Tech stack
 
-| Layer | Technology |
-| --- | --- |
-| Framework | [Next.js](https://nextjs.org/) 16 (App Router) |
-| Language | [TypeScript](https://www.typescriptlang.org/) |
-| Styling | [Tailwind CSS](https://tailwindcss.com/) v4 |
+
+| Layer          | Technology                                                          |
+| -------------- | ------------------------------------------------------------------- |
+| Framework      | [Next.js](https://nextjs.org/) 16 (App Router)                      |
+| Language       | [TypeScript](https://www.typescriptlang.org/)                       |
+| Styling        | [Tailwind CSS](https://tailwindcss.com/) v4                         |
 | Backend / data | [Convex](https://www.convex.dev/) (queries, mutations, HTTP routes) |
-| Authentication | [Clerk](https://clerk.com/) |
-| Email | [Resend](https://resend.com/) (invites and transactional templates) |
-| Charts | [Recharts](https://recharts.org/) |
-| Motion | [Framer Motion](https://www.framer.com/motion/) |
-| Toast UI | [Sonner](https://sonner.emilkowal.ski/) |
+| Authentication | [Clerk](https://clerk.com/)                                         |
+| Email          | [Resend](https://resend.com/) (invites and transactional templates) |
+| Charts         | [Recharts](https://recharts.org/)                                   |
+| Motion         | [Framer Motion](https://www.framer.com/motion/)                     |
+| Toast UI       | [Sonner](https://sonner.emilkowal.ski/)                             |
+
 
 ## Dependencies
 
@@ -69,23 +71,17 @@ npm install
 ## Configuration
 
 1. Copy the environment template and fill in values for your Convex and Clerk projects (and email, if used):
-
-   ```bash
+  ```bash
    cp .env.example .env.local
-   ```
-
+  ```
 2. See `.env.example` for variable names and short comments. Convex-only secrets (for example JWT issuer and webhook verification) are set in the [Convex dashboard](https://dashboard.convex.dev) for each deployment, not only in `.env.local`.
-
 3. **Clerk**
-
-   - Create an application in the [Clerk dashboard](https://dashboard.clerk.com) and add the publishable and secret keys to `.env.local`.
-   - Configure a JWT template named `convex` as described in the [Convex + Clerk docs](https://docs.convex.dev/auth/clerk).
-   - Point the Clerk **user** webhook at your Convex HTTP route, for example `https://<your-deployment>.convex.site/clerk-webhook`, with events such as `user.created` and `user.updated`. Store the signing secret where Convex expects it (see `.env.example`).
-
+  - Create an application in the [Clerk dashboard](https://dashboard.clerk.com) and add the publishable and secret keys to `.env.local`.
+  - Configure a JWT template named `convex` as described in the [Convex + Clerk docs](https://docs.convex.dev/auth/clerk).
+  - Point the Clerk **user** webhook at your Convex HTTP route, for example `https://<your-deployment>.convex.site/clerk-webhook`, with events such as `user.created` and `user.updated`. Store the signing secret where Convex expects it (see `.env.example`).
 4. **Convex**
-
-   - From the project root, run `npx convex dev` to link the project and sync schema/functions during development.
-   - Use `npx convex deploy` when deploying backend changes to production.
+  - From the project root, run `npx convex dev` to link the project and sync schema/functions during development.
+  - Use `npx convex deploy` when deploying backend changes to production.
 
 ## Running locally
 
@@ -105,12 +101,14 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Scripts
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Next.js development server |
-| `npm run build` | Production build |
+
+| Command         | Description                               |
+| --------------- | ----------------------------------------- |
+| `npm run dev`   | Next.js development server                |
+| `npm run build` | Production build                          |
 | `npm run start` | Run the production server (after `build`) |
-| `npm run lint` | ESLint |
+| `npm run lint`  | ESLint                                    |
+
 
 ## Documentation
 
