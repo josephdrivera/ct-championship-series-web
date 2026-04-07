@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: "📊" },
@@ -105,11 +105,13 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { isLoading: convexAuthLoading, isAuthenticated } = useConvexAuth();
   const currentUser = useQuery(api.users.getCurrentUser);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Loading state
-  if (currentUser === undefined) {
+  const loading = convexAuthLoading || currentUser === undefined;
+
+  if (loading) {
     return (
       <main className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-cream">
         <div className="text-center">
@@ -120,20 +122,43 @@ export default function AdminLayout({
     );
   }
 
-  // Not authorized
-  if (
-    currentUser === null ||
-    (!currentUser.isCommissioner && !currentUser.isSuperAdmin)
-  ) {
+  const hasAdminRole =
+    currentUser !== null &&
+    (currentUser.isCommissioner === true || currentUser.isSuperAdmin === true);
+
+  if (!isAuthenticated || currentUser === null || !hasAdminRole) {
+    let title = "Not authorized";
+    let body =
+      "You need commissioner or super admin access to use the admin area.";
+
+    if (!isAuthenticated) {
+      title = "Convex could not verify your session";
+      body =
+        "Clerk may be signed in, but Convex rejected the auth token. Check that CLERK_JWT_ISSUER_DOMAIN on your Convex deployment matches this Clerk app’s Frontend API URL, then redeploy.";
+    } else if (currentUser === null) {
+      title = "No league profile yet";
+      body =
+        "Convex does not have a user row for your account. Confirm the Clerk webhook points to https://<deployment>.convex.site/clerk-webhook, CLERK_WEBHOOK_SECRET is set on Convex, then sign out and sign in again.";
+    }
+
     return (
-      <main className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-cream">
+      <main className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-cream px-4">
         <div className="max-w-md text-center">
           <h1 className="font-serif text-3xl font-bold text-dark-green">
-            Not Authorized
+            {title}
           </h1>
-          <p className="mt-3 text-dark-green/60">
-            You need commissioner or super admin access to use the admin area.
-          </p>
+          <p className="mt-3 text-sm text-dark-green/70">{body}</p>
+          {isAuthenticated && currentUser !== null && !hasAdminRole && (
+            <p className="mt-4 rounded-lg bg-sand/80 px-4 py-3 text-left text-xs text-dark-green/80">
+              First admin: Convex dashboard → Data → <code>users</code> → open
+              your row → set <code>isCommissioner</code> and{" "}
+              <code>isSuperAdmin</code> to <code>true</code>, or run:
+              <code className="mt-2 block whitespace-normal break-all">
+                npx convex run seed:promoteSuperAdmin --prod
+                &apos;{`{"email":"your@email.com"}`}&apos;
+              </code>
+            </p>
+          )}
           <Link
             href="/"
             className="mt-6 inline-block rounded-full bg-augusta px-6 py-3 text-sm font-semibold text-cream transition-colors hover:bg-deep-green"
