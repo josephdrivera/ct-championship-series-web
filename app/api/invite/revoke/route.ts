@@ -1,16 +1,31 @@
 /**
  * POST /api/invite/revoke — Super-admin only.
- * Revokes the invitation in Clerk (invalidates the link), then marks it revoked in Convex.
+ * Revokes the invitation in Clerk (invalidates the link), then deletes the Convex row.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { clerkClient, auth } from "@clerk/nextjs/server";
 import { fetchQuery, fetchMutation } from "convex/nextjs";
+import { ConvexError } from "convex/values";
 import { api } from "@/convex/_generated/api";
 import {
   revokeClerkInvitation,
   isBenignClerkRevokeFailure,
   getClerkErrorMessage,
 } from "@/lib/clerk-revoke-invitation";
+
+function convexClientErrorMessage(err: unknown): string {
+  if (err instanceof ConvexError) {
+    const d = err.data;
+    if (typeof d === "string") return d;
+    if (d !== undefined && d !== null && typeof d === "object" && "message" in d) {
+      const m = (d as { message?: unknown }).message;
+      if (typeof m === "string") return m;
+    }
+    if (err.message.length > 0) return err.message;
+  }
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
 
 export const runtime = "nodejs";
 
@@ -72,23 +87,17 @@ export async function POST(request: NextRequest) {
 
   try {
     await fetchMutation(
-      api.invitations.markRevoked,
+      api.invitations.deleteInvitation,
       { clerkInvitationId },
       { token }
     );
   } catch (err: unknown) {
-    console.error(
-      "[api/invite/revoke] Convex markRevoked failed:",
-      err
-    );
-    const message =
-      err instanceof Error
-        ? err.message
-        : "Could not update invitation status in league records.";
-    // 409: invitation already accepted / not cancellable — not a server outage.
-    const status = message.includes("Only pending invitations")
-      ? 409
-      : 500;
+    console.error("[api/invite/revoke] Convex deleteInvitation failed:", err);
+    const message = convexClientErrorMessage(err);
+    const conflict =
+      message.includes("already accepted") ||
+      message.includes("Only pending invitations");
+    const status = conflict ? 409 : 500;
     return NextResponse.json({ error: message }, { status });
   }
 

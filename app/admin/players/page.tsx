@@ -247,7 +247,6 @@ function InvitationList({ enabled }: { enabled: boolean }) {
 
   const pending = invitations.filter((inv) => inv.status === "pending");
   const accepted = invitations.filter((inv) => inv.status === "accepted");
-  const revoked = invitations.filter((inv) => inv.status === "revoked");
 
   return (
     <div className="mt-4 rounded-xl bg-white p-6 shadow-sm">
@@ -310,21 +309,6 @@ function InvitationList({ enabled }: { enabled: boolean }) {
                 <td className="px-3 py-2 font-medium text-dark-green">
                   {inv.acceptedUserName ?? "—"}
                 </td>
-                <td className="px-3 py-2 text-dark-green/40">—</td>
-              </tr>
-            ))}
-            {revoked.map((inv) => (
-              <tr key={inv._id} className="border-b border-sand/50">
-                <td className="px-3 py-2 text-dark-green">{inv.email}</td>
-                <td className="px-3 py-2">
-                  <span className="rounded-full bg-sand px-2.5 py-0.5 text-xs font-semibold text-dark-green/60">
-                    Cancelled
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-dark-green/60">
-                  {new Date(inv.sentAt).toLocaleDateString()}
-                </td>
-                <td className="px-3 py-2 text-dark-green/40">—</td>
                 <td className="px-3 py-2 text-dark-green/40">—</td>
               </tr>
             ))}

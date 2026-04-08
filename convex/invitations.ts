@@ -43,7 +43,8 @@ export const listForAdmin = query({
       return [];
     }
 
-    const invitations = await ctx.db.query("leagueInvitations").collect();
+    const rows = await ctx.db.query("leagueInvitations").collect();
+    const invitations = rows.filter((inv) => inv.status !== "revoked");
 
     const withDetails = await Promise.all(
       invitations.map(async (inv) => {
@@ -67,10 +68,10 @@ export const listForAdmin = query({
 });
 
 /**
- * Marks a pending invitation as revoked (after Clerk revoke succeeds).
- * Called from POST /api/invite/revoke after `revokeInvitation`.
+ * Removes the invitation row after Clerk revoke (invalidates the link).
+ * Pending mistakes (wrong email, etc.) are fully cleared from league records.
  */
-export const markRevoked = mutation({
+export const deleteInvitation = mutation({
   args: { clerkInvitationId: v.string() },
   handler: async (ctx, args) => {
     await requireSuperAdmin(ctx);
@@ -82,22 +83,17 @@ export const markRevoked = mutation({
       )
       .unique();
 
-    // Clerk revoke already ran; missing row means Convex never recorded the send
-    // (e.g. recordSent failed) or data drift — treat as success so the API stays idempotent.
+    // Clerk revoke already ran; nothing to delete — idempotent.
     if (!inv) {
       return;
     }
-    if (inv.status === "revoked") {
-      return;
+    if (inv.status === "accepted") {
+      throw new Error(
+        "This invitation was already accepted; it cannot be removed from the list."
+      );
     }
-    if (inv.status !== "pending") {
-      throw new Error("Only pending invitations can be cancelled");
-    }
-
-    await ctx.db.patch(inv._id, {
-      status: "revoked",
-      revokedAt: Date.now(),
-    });
+    // pending or legacy "revoked" rows — remove entirely
+    await ctx.db.delete(inv._id);
   },
 });
 
