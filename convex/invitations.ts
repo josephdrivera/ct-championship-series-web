@@ -8,7 +8,7 @@ import {
   internalMutation,
   type MutationCtx,
 } from "./_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { getCurrentUserOrNull, requireSuperAdmin } from "./helpers";
 
 /** Shared by super-admin cancel API and Clerk `invitation.revoked` webhook. */
@@ -109,7 +109,7 @@ export const deleteInvitation = mutation({
     );
     if (result === "missing") return;
     if (result === "accepted") {
-      throw new Error(
+      throw new ConvexError(
         "This invitation was already accepted; it cannot be removed from the list."
       );
     }

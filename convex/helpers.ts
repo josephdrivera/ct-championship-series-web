@@ -5,6 +5,7 @@
  */
 import { QueryCtx, MutationCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
+import { ConvexError } from "convex/values";
 
 // ── Scoring constants ──────────────────────────────────────────────
 const POINTS_TABLE = [100, 85, 72, 62, 54, 48, 43, 39, 36, 33, 30];
@@ -31,7 +32,7 @@ export async function requireUser(
   ctx: QueryCtx | MutationCtx
 ): Promise<Doc<"users">> {
   const user = await getCurrentUserOrNull(ctx);
-  if (!user) throw new Error("Authentication required");
+  if (!user) throw new ConvexError("Authentication required");
   return user;
 }
 
@@ -43,7 +44,9 @@ export async function requireActiveUser(
 ): Promise<Doc<"users">> {
   const user = await requireUser(ctx);
   if (user.isSuspended)
-    throw new Error("Your account is suspended. You cannot perform this action.");
+    throw new ConvexError(
+      "Your account is suspended. You cannot perform this action."
+    );
   return user;
 }
 
@@ -57,7 +60,7 @@ export async function requireCommissioner(
 ): Promise<Doc<"users">> {
   const user = await requireUser(ctx);
   if (!user.isCommissioner && !user.isSuperAdmin)
-    throw new Error("Commissioner access required");
+    throw new ConvexError("Commissioner access required");
   return user;
 }
 
@@ -68,7 +71,7 @@ export async function requireSuperAdmin(
   ctx: QueryCtx | MutationCtx
 ): Promise<Doc<"users">> {
   const user = await requireUser(ctx);
-  if (!user.isSuperAdmin) throw new Error("Super admin access required");
+  if (!user.isSuperAdmin) throw new ConvexError("Super admin access required");
   return user;
 }
 

@@ -4,7 +4,7 @@
  * and Clerk webhook sync.
  */
 import { query, mutation, internalMutation } from "./_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import {
   requireSuperAdmin,
   requireCommissioner,
@@ -214,13 +214,13 @@ export const markWelcomeSeen = mutation({
   args: {},
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Authentication required");
+    if (!identity) throw new ConvexError("Authentication required");
 
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .first();
-    if (!user) throw new Error("User not found");
+    if (!user) throw new ConvexError("User not found");
 
     await ctx.db.patch(user._id, { hasSeenWelcome: true });
   },
