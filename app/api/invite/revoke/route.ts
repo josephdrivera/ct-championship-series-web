@@ -97,21 +97,56 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  let clerkAlreadyRevoked = false;
   try {
     const client = await clerkClient();
     await revokeClerkInvitation(client, clerkInvitationId);
   } catch (err: unknown) {
-    console.error("[api/invite/revoke] Clerk revoke failed:", err);
     if (!isBenignClerkRevokeFailure(err)) {
+      console.error("[api/invite/revoke] Clerk revoke failed:", err);
       return NextResponse.json(
         { error: getClerkErrorMessage(err) },
         { status: 400 }
       );
     }
+    clerkAlreadyRevoked = true;
     console.warn(
-      "[api/invite/revoke] Clerk reported non-fatal state; syncing Convex only:",
+      "[api/invite/revoke] Clerk invitation already inactive; checking Convex sync:",
       err
     );
+  }
+
+  // Clerk may have revoked first (or webhook deleted our row). If Convex already
+  // has no rows, skip fetchMutation — avoids a no-op mutation when prod hides errors.
+  if (clerkAlreadyRevoked) {
+    try {
+      const sync = await fetchQuery(
+        api.invitations.invitationRowsForAdminRevoke,
+        { clerkInvitationId },
+        { token }
+      );
+      if (!sync.ok) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      if (sync.count === 0) {
+        return NextResponse.json({ success: true });
+      }
+      if (sync.hasAccepted) {
+        return NextResponse.json(
+          {
+            error:
+              "This invitation was already accepted; it cannot be removed from the list.",
+          },
+          { status: 409 }
+        );
+      }
+    } catch (err: unknown) {
+      console.error(
+        "[api/invite/revoke] invitationRowsForAdminRevoke failed:",
+        err
+      );
+      // Fall through to deleteInvitation so we still try to clear pending rows.
+    }
   }
 
   try {

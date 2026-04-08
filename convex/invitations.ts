@@ -62,6 +62,33 @@ export const recordSent = mutation({
   },
 });
 
+/**
+ * Super-admin only: row counts for revoke sync after Clerk says the invite is
+ * already revoked (webhook may have deleted the Convex row first).
+ */
+export const invitationRowsForAdminRevoke = query({
+  args: { clerkInvitationId: v.string() },
+  handler: async (ctx, args) => {
+    const viewer = await getCurrentUserOrNull(ctx);
+    if (!viewer?.isSuperAdmin) {
+      return { ok: false as const };
+    }
+
+    const invs = await ctx.db
+      .query("leagueInvitations")
+      .withIndex("by_clerk_id", (q) =>
+        q.eq("clerkInvitationId", args.clerkInvitationId)
+      )
+      .collect();
+
+    return {
+      ok: true as const,
+      count: invs.length,
+      hasAccepted: invs.some((i) => i.status === "accepted"),
+    };
+  },
+});
+
 export const listForAdmin = query({
   args: {},
   handler: async (ctx) => {
@@ -100,6 +127,7 @@ export const listForAdmin = query({
  */
 export const deleteInvitation = mutation({
   args: { clerkInvitationId: v.string() },
+  returns: v.null(),
   handler: async (ctx, args) => {
     await requireSuperAdmin(ctx);
 
@@ -107,12 +135,13 @@ export const deleteInvitation = mutation({
       ctx,
       args.clerkInvitationId
     );
-    if (result === "missing") return;
+    if (result === "missing") return null;
     if (result === "accepted") {
       throw new ConvexError(
         "This invitation was already accepted; it cannot be removed from the list."
       );
     }
+    return null;
   },
 });
 
