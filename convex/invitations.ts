@@ -16,15 +16,20 @@ async function removeInvitationRowAfterRevoke(
   ctx: MutationCtx,
   clerkInvitationId: string
 ): Promise<"deleted" | "missing" | "accepted"> {
-  const inv = await ctx.db
+  // Use collect(), not unique(): duplicate rows for the same Clerk id would make
+  // unique() throw and surface as 500 from /api/invite/revoke.
+  const invs = await ctx.db
     .query("leagueInvitations")
     .withIndex("by_clerk_id", (q) =>
       q.eq("clerkInvitationId", clerkInvitationId)
     )
-    .unique();
-  if (!inv) return "missing";
-  if (inv.status === "accepted") return "accepted";
-  await ctx.db.delete(inv._id);
+    .collect();
+
+  if (invs.length === 0) return "missing";
+  if (invs.some((i) => i.status === "accepted")) return "accepted";
+  for (const inv of invs) {
+    await ctx.db.delete(inv._id);
+  }
   return "deleted";
 }
 
@@ -43,9 +48,9 @@ export const recordSent = mutation({
       .withIndex("by_clerk_id", (q) =>
         q.eq("clerkInvitationId", args.clerkInvitationId)
       )
-      .unique();
+      .collect();
 
-    if (existing) return existing._id;
+    if (existing.length > 0) return existing[0]._id;
 
     return await ctx.db.insert("leagueInvitations", {
       clerkInvitationId: args.clerkInvitationId,
