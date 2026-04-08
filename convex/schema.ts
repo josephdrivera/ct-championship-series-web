@@ -14,6 +14,7 @@ export default defineSchema({
     isSuperAdmin: v.optional(v.boolean()),
     hasSeenWelcome: v.optional(v.boolean()),
     isSuspended: v.optional(v.boolean()),
+    hiddenFromDirectory: v.optional(v.boolean()),
   }).index("by_clerk_id", ["clerkId"]),
 
   seasons: defineTable({
@@ -228,4 +229,22 @@ export default defineSchema({
     userId: v.id("users"),
     lastSeenAt: v.number(),
   }).index("by_user", ["userId"]),
+
+  /** Tracks invitations sent via the admin panel and their acceptance status. */
+  leagueInvitations: defineTable({
+    clerkInvitationId: v.string(),
+    email: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("revoked")
+    ),
+    sentAt: v.number(),
+    invitedByUserId: v.optional(v.id("users")),
+    acceptedAt: v.optional(v.number()),
+    acceptedUserId: v.optional(v.id("users")),
+  })
+    .index("by_email", ["email"])
+    .index("by_clerk_id", ["clerkInvitationId"])
+    .index("by_status", ["status"]),
 });

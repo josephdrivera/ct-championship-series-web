@@ -4,11 +4,17 @@
  */
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { requireCommissioner, recalculateStandings } from "./helpers";
+import {
+  requireCommissioner,
+  recalculateStandings,
+  getCurrentUserOrNull,
+  isUserPubliclyVisible,
+} from "./helpers";
 
 export const getSeasonStandings = query({
   args: { seasonId: v.id("seasons") },
   handler: async (ctx, args) => {
+    const viewer = await getCurrentUserOrNull(ctx);
     const standings = await ctx.db
       .query("standings")
       .withIndex("by_season_rank", (q) => q.eq("seasonId", args.seasonId))
@@ -21,7 +27,9 @@ export const getSeasonStandings = query({
       }))
     );
 
-    return withUsers.sort((a, b) => a.standing.rank - b.standing.rank);
+    return withUsers
+      .filter((row) => row.user !== null && isUserPubliclyVisible(row.user, viewer))
+      .sort((a, b) => a.standing.rank - b.standing.rank);
   },
 });
 

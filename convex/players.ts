@@ -1,23 +1,34 @@
 /**
- * Player directory: all public queries (no auth required).
+ * Player directory: public queries with hidden-player filtering.
  * Lists, profiles with aggregated stats, and head-to-head records.
  */
 import { query } from "./_generated/server";
 import { v } from "convex/values";
+import { getCurrentUserOrNull, isUserPubliclyVisible } from "./helpers";
 
 export const getAllPlayers = query({
   args: {},
   handler: async (ctx) => {
+    const viewer = await getCurrentUserOrNull(ctx);
     const users = await ctx.db.query("users").collect();
-    return users.sort((a, b) => a.name.localeCompare(b.name));
+    return users
+      .filter((u) => isUserPubliclyVisible(u, viewer))
+      .sort((a, b) => a.name.localeCompare(b.name));
   },
 });
 
 export const getPlayersWithStats = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    forAdmin: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const viewer = await getCurrentUserOrNull(ctx);
     const users = await ctx.db.query("users").collect();
     const allScores = await ctx.db.query("scores").collect();
+
+    const isAdmin =
+      viewer?.isCommissioner === true || viewer?.isSuperAdmin === true;
+    const showAll = args.forAdmin === true && isAdmin;
 
     const eventsMap = new Map<string, number>();
     for (const score of allScores) {
@@ -28,6 +39,7 @@ export const getPlayersWithStats = query({
     }
 
     return users
+      .filter((u) => showAll || isUserPubliclyVisible(u, viewer))
       .map((u) => ({ ...u, eventsPlayed: eventsMap.get(u._id as string) ?? 0 }))
       .sort((a, b) => a.name.localeCompare(b.name));
   },
@@ -39,13 +51,16 @@ export const getPlayerProfile = query({
     const user = await ctx.db.get(args.userId);
     if (!user) throw new Error("User not found");
 
-    // Fetch all scores for this user
+    const viewer = await getCurrentUserOrNull(ctx);
+    if (!isUserPubliclyVisible(user, viewer)) {
+      throw new Error("User not found");
+    }
+
     const scores = await ctx.db
       .query("scores")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .collect();
 
-    // Aggregate stats
     const totalPoints = scores.reduce((sum, s) => sum + s.pointsEarned, 0);
     const avgScore =
       scores.length > 0
@@ -55,7 +70,6 @@ export const getPlayerProfile = query({
     const birdies = scores.reduce((sum, s) => sum + s.birdies, 0);
     const eventsPlayed = scores.length;
 
-    // Recent scores: join with events and courses, sorted by event date
     const scoresWithEvents = await Promise.all(
       scores.map(async (score) => {
         const event = await ctx.db.get(score.eventId);
@@ -69,7 +83,6 @@ export const getPlayerProfile = query({
       .sort((a, b) => b.event!.date.localeCompare(a.event!.date))
       .slice(0, 5);
 
-    // Fetch achievements
     const achievements = await ctx.db
       .query("achievements")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))

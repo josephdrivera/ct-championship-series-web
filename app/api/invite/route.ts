@@ -5,7 +5,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { clerkClient, auth } from "@clerk/nextjs/server";
-import { fetchQuery } from "convex/nextjs";
+import { fetchQuery, fetchMutation } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { isResendConfigured, sendInvitationEmail } from "@/lib/email";
 
@@ -100,6 +100,16 @@ export async function POST(request: NextRequest) {
         },
         { status: 502 }
       );
+    }
+
+    try {
+      await fetchMutation(
+        api.invitations.recordSent,
+        { clerkInvitationId: invitation.id, email: emailAddress },
+        { token }
+      );
+    } catch (recordErr) {
+      console.error("Failed to record invitation in Convex:", recordErr);
     }
 
     return NextResponse.json({ success: true, id: invitation.id });

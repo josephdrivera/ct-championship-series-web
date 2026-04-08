@@ -13,6 +13,7 @@ import type * as checkInsEmail from "../checkInsEmail.js";
 import type * as courses from "../courses.js";
 import type * as events from "../events.js";
 import type * as helpers from "../helpers.js";
+import type * as invitations from "../invitations.js";
 import type * as history from "../history.js";
 import type * as http from "../http.js";
 import type * as notifications from "../notifications.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   events: typeof events;
   helpers: typeof helpers;
   history: typeof history;
+  invitations: typeof invitations;
   http: typeof http;
   notifications: typeof notifications;
   players: typeof players;

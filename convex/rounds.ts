@@ -9,6 +9,8 @@ import {
   requireUser,
   requireCommissioner,
   calculateAndApplyEventPoints,
+  getCurrentUserOrNull,
+  isUserPubliclyVisible,
 } from "./helpers";
 
 // ── Queries (public, real-time leaderboard) ────────────────────────
@@ -16,6 +18,7 @@ import {
 export const getActiveRounds = query({
   args: { eventId: v.id("events") },
   handler: async (ctx, args) => {
+    const viewer = await getCurrentUserOrNull(ctx);
     const rounds = await ctx.db
       .query("liveRounds")
       .withIndex("by_event_status", (q) =>
@@ -30,19 +33,21 @@ export const getActiveRounds = query({
       }))
     );
 
-    return withUsers;
+    return withUsers.filter(
+      (row) => row.user !== null && isUserPubliclyVisible(row.user, viewer)
+    );
   },
 });
 
 export const getLiveLeaderboard = query({
   args: { eventId: v.id("events") },
   handler: async (ctx, args) => {
+    const viewer = await getCurrentUserOrNull(ctx);
     const rounds = await ctx.db
       .query("liveRounds")
       .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
       .collect();
 
-    // Only include active and completed rounds
     const relevantRounds = rounds.filter(
       (r) => r.status === "inProgress" || r.status === "completed"
     );
@@ -54,13 +59,16 @@ export const getLiveLeaderboard = query({
       }))
     );
 
-    // Sort by relToPar ascending, then by currentHole descending (further along breaks ties)
-    return withUsers.sort((a, b) => {
-      if (a.round.relToPar !== b.round.relToPar) {
-        return a.round.relToPar - b.round.relToPar;
-      }
-      return b.round.currentHole - a.round.currentHole;
-    });
+    return withUsers
+      .filter(
+        (row) => row.user !== null && isUserPubliclyVisible(row.user, viewer)
+      )
+      .sort((a, b) => {
+        if (a.round.relToPar !== b.round.relToPar) {
+          return a.round.relToPar - b.round.relToPar;
+        }
+        return b.round.currentHole - a.round.currentHole;
+      });
   },
 });
 

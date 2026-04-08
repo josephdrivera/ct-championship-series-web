@@ -206,6 +206,82 @@ function EditPlayerForm({
   );
 }
 
+function InvitationList() {
+  const invitations = useQuery(api.invitations.listForAdmin);
+
+  if (invitations === undefined) {
+    return (
+      <div className="mt-4 rounded-xl bg-white p-6 shadow-sm">
+        <h2 className="font-serif text-lg font-bold text-dark-green">
+          Invitations
+        </h2>
+        <div className="mt-4 space-y-2">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-8 animate-pulse rounded bg-augusta/10" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (invitations.length === 0) return null;
+
+  const pending = invitations.filter((inv) => inv.status === "pending");
+  const accepted = invitations.filter((inv) => inv.status === "accepted");
+
+  return (
+    <div className="mt-4 rounded-xl bg-white p-6 shadow-sm">
+      <h2 className="font-serif text-lg font-bold text-dark-green">
+        Invitations
+      </h2>
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-sand text-left">
+              <th className="px-3 py-2 font-semibold text-dark-green">Email</th>
+              <th className="px-3 py-2 font-semibold text-dark-green">Status</th>
+              <th className="px-3 py-2 font-semibold text-dark-green">Sent</th>
+              <th className="px-3 py-2 font-semibold text-dark-green">Player</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pending.map((inv) => (
+              <tr key={inv._id} className="border-b border-sand/50">
+                <td className="px-3 py-2 text-dark-green">{inv.email}</td>
+                <td className="px-3 py-2">
+                  <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                    Pending
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-dark-green/60">
+                  {new Date(inv.sentAt).toLocaleDateString()}
+                </td>
+                <td className="px-3 py-2 text-dark-green/40">—</td>
+              </tr>
+            ))}
+            {accepted.map((inv) => (
+              <tr key={inv._id} className="border-b border-sand/50">
+                <td className="px-3 py-2 text-dark-green">{inv.email}</td>
+                <td className="px-3 py-2">
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                    Accepted
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-dark-green/60">
+                  {new Date(inv.sentAt).toLocaleDateString()}
+                </td>
+                <td className="px-3 py-2 font-medium text-dark-green">
+                  {inv.acceptedUserName ?? "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function BulkHandicapTable({
   players,
   onClose,
@@ -335,12 +411,13 @@ function BulkHandicapTable({
 }
 
 export default function AdminPlayersPage() {
-  const players = useQuery(api.players.getPlayersWithStats);
+  const players = useQuery(api.players.getPlayersWithStats, { forAdmin: true });
   const currentUser = useQuery(api.users.getCurrentUser);
   const updateUserRole = useMutation(api.users.updateUserRole);
   const suspendPlayer = useMutation(api.users.suspendPlayer);
   const unsuspendPlayer = useMutation(api.users.unsuspendPlayer);
   const deletePlayerMutation = useMutation(api.users.deletePlayer);
+  const setPlayerVisibility = useMutation(api.users.setPlayerVisibility);
 
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
   const [bulkHandicapMode, setBulkHandicapMode] = useState(false);
@@ -435,10 +512,11 @@ export default function AdminPlayersPage() {
         Manage league members, handicaps, and roles.
       </p>
 
-      {/* Invite form - super admins only */}
+      {/* Invite form + invitation list - super admins only */}
       {isSuperAdmin && (
         <div className="mt-8">
           <InviteForm />
+          <InvitationList />
         </div>
       )}
 
@@ -555,6 +633,12 @@ export default function AdminPlayersPage() {
                               color="bg-red-100 text-red-600"
                             />
                           )}
+                          {player.hiddenFromDirectory && (
+                            <RoleBadge
+                              label="Hidden"
+                              color="bg-dark-green/10 text-dark-green/60"
+                            />
+                          )}
                           {player.handicap !== undefined && (
                             <span className="text-xs text-dark-green/50">
                               HCP {player.handicap}
@@ -637,6 +721,36 @@ export default function AdminPlayersPage() {
                           className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
                         >
                           Delete
+                        </button>
+                      )}
+                      {!isCurrentUser && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await setPlayerVisibility({
+                                userId: player._id,
+                                hidden: !player.hiddenFromDirectory,
+                              });
+                              toast.success(
+                                player.hiddenFromDirectory
+                                  ? `${player.name} is now visible`
+                                  : `${player.name} is now hidden`
+                              );
+                            } catch (err) {
+                              toast.error(
+                                err instanceof Error
+                                  ? err.message
+                                  : "Failed to update visibility"
+                              );
+                            }
+                          }}
+                          className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                            player.hiddenFromDirectory
+                              ? "bg-dark-green/10 text-dark-green/60 hover:bg-dark-green/20"
+                              : "bg-sand text-dark-green/60 hover:bg-dark-green/10"
+                          }`}
+                        >
+                          {player.hiddenFromDirectory ? "Show" : "Hide"}
                         </button>
                       )}
                       <button

@@ -72,6 +72,22 @@ export async function requireSuperAdmin(
   return user;
 }
 
+// ── Visibility ─────────────────────────────────────────────────────
+
+/**
+ * Returns true when a user should appear in public-facing lists.
+ * Hidden users are still visible to commissioners/super admins and to themselves.
+ */
+export function isUserPubliclyVisible(
+  user: Doc<"users">,
+  viewer: Doc<"users"> | null
+): boolean {
+  if (!user.hiddenFromDirectory) return true;
+  if (viewer && (viewer.isCommissioner || viewer.isSuperAdmin)) return true;
+  if (viewer && viewer._id === user._id) return true;
+  return false;
+}
+
 // ── Scoring engine ─────────────────────────────────────────────────
 
 /**

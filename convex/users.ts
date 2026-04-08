@@ -292,6 +292,21 @@ export const unsuspendPlayer = mutation({
   },
 });
 
+export const setPlayerVisibility = mutation({
+  args: {
+    userId: v.id("users"),
+    hidden: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    await requireCommissioner(ctx);
+
+    const user = await ctx.db.get(args.userId);
+    if (!user) throw new Error("User not found");
+
+    await ctx.db.patch(args.userId, { hiddenFromDirectory: args.hidden });
+  },
+});
+
 // ── Internal: Clerk webhook sync (server-only, not browser-callable) ──
 
 export const upsertFromClerk = internalMutation({

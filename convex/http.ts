@@ -73,12 +73,19 @@ http.route({
         primaryEmail = primary?.email_address ?? email_addresses[0].email_address;
       }
 
-      await ctx.runMutation(internal.users.upsertFromClerk, {
+      const userId = await ctx.runMutation(internal.users.upsertFromClerk, {
         clerkId: id,
         name,
         photo: image_url ?? undefined,
         email: primaryEmail,
       });
+
+      if (eventType === "user.created" && primaryEmail) {
+        await ctx.runMutation(internal.invitations.markAcceptedByEmail, {
+          email: primaryEmail,
+          userId,
+        });
+      }
     }
 
     return new Response("OK", { status: 200 });
