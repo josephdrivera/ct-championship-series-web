@@ -206,8 +206,13 @@ function EditPlayerForm({
   );
 }
 
-function InvitationList() {
-  const invitations = useQuery(api.invitations.listForAdmin);
+function InvitationList({ enabled }: { enabled: boolean }) {
+  const invitations = useQuery(
+    api.invitations.listForAdmin,
+    enabled ? {} : "skip"
+  );
+
+  if (!enabled) return null;
 
   if (invitations === undefined) {
     return (
@@ -411,7 +416,7 @@ function BulkHandicapTable({
 }
 
 export default function AdminPlayersPage() {
-  const players = useQuery(api.players.getPlayersWithStats, { forAdmin: true });
+  const players = useQuery(api.players.getPlayersWithStatsForAdmin);
   const currentUser = useQuery(api.users.getCurrentUser);
   const updateUserRole = useMutation(api.users.updateUserRole);
   const suspendPlayer = useMutation(api.users.suspendPlayer);
@@ -512,13 +517,13 @@ export default function AdminPlayersPage() {
         Manage league members, handicaps, and roles.
       </p>
 
-      {/* Invite form + invitation list - super admins only */}
+      {/* Invite form - super admins only; invitation list uses skip until enabled */}
       {isSuperAdmin && (
         <div className="mt-8">
           <InviteForm />
-          <InvitationList />
         </div>
       )}
+      <InvitationList enabled={isSuperAdmin === true} />
 
       {/* Bulk handicap mode */}
       {bulkHandicapMode && players && (

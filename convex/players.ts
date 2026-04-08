@@ -2,9 +2,31 @@
  * Player directory: public queries with hidden-player filtering.
  * Lists, profiles with aggregated stats, and head-to-head records.
  */
-import { query } from "./_generated/server";
+import { query, type QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
-import { getCurrentUserOrNull, isUserPubliclyVisible } from "./helpers";
+import {
+  getCurrentUserOrNull,
+  isUserPubliclyVisible,
+  requireCommissioner,
+} from "./helpers";
+
+async function playersWithEventsPlayed(ctx: QueryCtx) {
+  const users = await ctx.db.query("users").collect();
+  const allScores = await ctx.db.query("scores").collect();
+
+  const eventsMap = new Map<string, number>();
+  for (const score of allScores) {
+    eventsMap.set(
+      score.userId as string,
+      (eventsMap.get(score.userId as string) ?? 0) + 1
+    );
+  }
+
+  return users.map((u) => ({
+    ...u,
+    eventsPlayed: eventsMap.get(u._id as string) ?? 0,
+  }));
+}
 
 export const getAllPlayers = query({
   args: {},
@@ -17,31 +39,25 @@ export const getAllPlayers = query({
   },
 });
 
+/** Public directory: respects hidden-from-directory flag. */
 export const getPlayersWithStats = query({
-  args: {
-    forAdmin: v.optional(v.boolean()),
-  },
-  handler: async (ctx, args) => {
+  args: {},
+  handler: async (ctx) => {
     const viewer = await getCurrentUserOrNull(ctx);
-    const users = await ctx.db.query("users").collect();
-    const allScores = await ctx.db.query("scores").collect();
-
-    const isAdmin =
-      viewer?.isCommissioner === true || viewer?.isSuperAdmin === true;
-    const showAll = args.forAdmin === true && isAdmin;
-
-    const eventsMap = new Map<string, number>();
-    for (const score of allScores) {
-      eventsMap.set(
-        score.userId as string,
-        (eventsMap.get(score.userId as string) ?? 0) + 1
-      );
-    }
-
-    return users
-      .filter((u) => showAll || isUserPubliclyVisible(u, viewer))
-      .map((u) => ({ ...u, eventsPlayed: eventsMap.get(u._id as string) ?? 0 }))
+    const withStats = await playersWithEventsPlayed(ctx);
+    return withStats
+      .filter((u) => isUserPubliclyVisible(u, viewer))
       .sort((a, b) => a.name.localeCompare(b.name));
+  },
+});
+
+/** Admin Players page: all members including hidden (commissioner+ only). */
+export const getPlayersWithStatsForAdmin = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireCommissioner(ctx);
+    const withStats = await playersWithEventsPlayed(ctx);
+    return withStats.sort((a, b) => a.name.localeCompare(b.name));
   },
 });
 

@@ -4,7 +4,7 @@
  */
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
-import { requireSuperAdmin } from "./helpers";
+import { getCurrentUserOrNull, requireSuperAdmin } from "./helpers";
 
 export const recordSent = mutation({
   args: {
@@ -38,7 +38,10 @@ export const recordSent = mutation({
 export const listForAdmin = query({
   args: {},
   handler: async (ctx) => {
-    await requireSuperAdmin(ctx);
+    const viewer = await getCurrentUserOrNull(ctx);
+    if (!viewer?.isSuperAdmin) {
+      return [];
+    }
 
     const invitations = await ctx.db.query("leagueInvitations").collect();
 
