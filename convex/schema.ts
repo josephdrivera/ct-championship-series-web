@@ -243,6 +243,7 @@ export default defineSchema({
     invitedByUserId: v.optional(v.id("users")),
     acceptedAt: v.optional(v.number()),
     acceptedUserId: v.optional(v.id("users")),
+    revokedAt: v.optional(v.number()),
   })
     .index("by_email", ["email"])
     .index("by_clerk_id", ["clerkInvitationId"])

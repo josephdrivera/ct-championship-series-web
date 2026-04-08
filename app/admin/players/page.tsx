@@ -6,16 +6,8 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
-
-function RoleBadge({ label, color }: { label: string; color: string }) {
-  return (
-    <span
-      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${color}`}
-    >
-      {label}
-    </span>
-  );
-}
+import { RoleBadge } from "@/components/admin/RoleBadge";
+import { PlayerRoleControls } from "@/components/admin/PlayerRoleControls";
 
 function InviteForm() {
   const [email, setEmail] = useState("");
@@ -211,6 +203,28 @@ function InvitationList({ enabled }: { enabled: boolean }) {
     api.invitations.listForAdmin,
     enabled ? {} : "skip"
   );
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  async function handleCancelInvitation(clerkInvitationId: string) {
+    setCancellingId(clerkInvitationId);
+    try {
+      const res = await fetch("/api/invite/revoke", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clerkInvitationId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to cancel invitation");
+      } else {
+        toast.success("Invitation cancelled");
+      }
+    } catch {
+      toast.error("Failed to cancel invitation");
+    } finally {
+      setCancellingId(null);
+    }
+  }
 
   if (!enabled) return null;
 
@@ -233,6 +247,7 @@ function InvitationList({ enabled }: { enabled: boolean }) {
 
   const pending = invitations.filter((inv) => inv.status === "pending");
   const accepted = invitations.filter((inv) => inv.status === "accepted");
+  const revoked = invitations.filter((inv) => inv.status === "revoked");
 
   return (
     <div className="mt-4 rounded-xl bg-white p-6 shadow-sm">
@@ -247,6 +262,9 @@ function InvitationList({ enabled }: { enabled: boolean }) {
               <th className="px-3 py-2 font-semibold text-dark-green">Status</th>
               <th className="px-3 py-2 font-semibold text-dark-green">Sent</th>
               <th className="px-3 py-2 font-semibold text-dark-green">Player</th>
+              <th className="px-3 py-2 font-semibold text-dark-green">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -262,6 +280,20 @@ function InvitationList({ enabled }: { enabled: boolean }) {
                   {new Date(inv.sentAt).toLocaleDateString()}
                 </td>
                 <td className="px-3 py-2 text-dark-green/40">—</td>
+                <td className="px-3 py-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void handleCancelInvitation(inv.clerkInvitationId)
+                    }
+                    disabled={cancellingId === inv.clerkInvitationId}
+                    className="rounded-full bg-sand px-3 py-1 text-xs font-medium text-dark-green/70 transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+                  >
+                    {cancellingId === inv.clerkInvitationId
+                      ? "Cancelling…"
+                      : "Cancel"}
+                  </button>
+                </td>
               </tr>
             ))}
             {accepted.map((inv) => (
@@ -278,6 +310,22 @@ function InvitationList({ enabled }: { enabled: boolean }) {
                 <td className="px-3 py-2 font-medium text-dark-green">
                   {inv.acceptedUserName ?? "—"}
                 </td>
+                <td className="px-3 py-2 text-dark-green/40">—</td>
+              </tr>
+            ))}
+            {revoked.map((inv) => (
+              <tr key={inv._id} className="border-b border-sand/50">
+                <td className="px-3 py-2 text-dark-green">{inv.email}</td>
+                <td className="px-3 py-2">
+                  <span className="rounded-full bg-sand px-2.5 py-0.5 text-xs font-semibold text-dark-green/60">
+                    Cancelled
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-dark-green/60">
+                  {new Date(inv.sentAt).toLocaleDateString()}
+                </td>
+                <td className="px-3 py-2 text-dark-green/40">—</td>
+                <td className="px-3 py-2 text-dark-green/40">—</td>
               </tr>
             ))}
           </tbody>
@@ -418,7 +466,6 @@ function BulkHandicapTable({
 export default function AdminPlayersPage() {
   const players = useQuery(api.players.getPlayersWithStatsForAdmin);
   const currentUser = useQuery(api.users.getCurrentUser);
-  const updateUserRole = useMutation(api.users.updateUserRole);
   const suspendPlayer = useMutation(api.users.suspendPlayer);
   const unsuspendPlayer = useMutation(api.users.unsuspendPlayer);
   const deletePlayerMutation = useMutation(api.users.deletePlayer);
@@ -467,44 +514,6 @@ export default function AdminPlayersPage() {
       toast.error(err instanceof Error ? err.message : "Failed to delete player");
     } finally {
       setActionLoading(null);
-    }
-  }
-
-  async function handleToggleCommissioner(
-    userId: Id<"users">,
-    currentValue: boolean
-  ) {
-    try {
-      await updateUserRole({ userId, isCommissioner: !currentValue });
-      toast.success(
-        !currentValue ? "Promoted to commissioner" : "Removed commissioner role"
-      );
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update role"
-      );
-    }
-  }
-
-  async function handleToggleSuperAdmin(
-    userId: Id<"users">,
-    currentValue: boolean
-  ) {
-    try {
-      await updateUserRole({
-        userId,
-        isSuperAdmin: !currentValue,
-        ...(!currentValue ? { isCommissioner: true } : {}),
-      });
-      toast.success(
-        !currentValue
-          ? "Promoted to super admin"
-          : "Removed super admin role"
-      );
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update role"
-      );
     }
   }
 
@@ -661,44 +670,12 @@ export default function AdminPlayersPage() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2">
-                      {/* Role controls - super admins only, can't edit self */}
-                      {isSuperAdmin && !isCurrentUser && (
-                        <>
-                          <button
-                            onClick={() =>
-                              handleToggleCommissioner(
-                                player._id,
-                                player.isCommissioner
-                              )
-                            }
-                            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                              player.isCommissioner
-                                ? "bg-gold/20 text-gold-dark hover:bg-gold/30"
-                                : "bg-sand text-dark-green/60 hover:bg-dark-green/10"
-                            }`}
-                          >
-                            {player.isCommissioner
-                              ? "Remove Commissioner"
-                              : "Make Commissioner"}
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleToggleSuperAdmin(
-                                player._id,
-                                player.isSuperAdmin === true
-                              )
-                            }
-                            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                              player.isSuperAdmin
-                                ? "bg-azalea/20 text-azalea hover:bg-azalea/30"
-                                : "bg-sand text-dark-green/60 hover:bg-dark-green/10"
-                            }`}
-                          >
-                            {player.isSuperAdmin
-                              ? "Remove Super Admin"
-                              : "Make Super Admin"}
-                          </button>
-                        </>
+                      {/* Role controls - super admins only */}
+                      {isSuperAdmin && (
+                        <PlayerRoleControls
+                          player={player}
+                          currentUserId={currentUser?._id}
+                        />
                       )}
                       {/* Suspend/Unsuspend - commissioners and super admins, not self */}
                       {!isCurrentUser && (

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
+import { RoleManagementSection } from "@/components/admin/RoleManagementSection";
 
 function StatCard({
   label,
@@ -31,6 +32,7 @@ const quickActions = [
   { href: "/admin/events", label: "Create Event" },
   { href: "/admin/scores", label: "Enter Scores" },
   { href: "/admin/courses", label: "Add Course" },
+  { href: "/admin/players", label: "Players & roles" },
   { href: "/admin/notifications", label: "Send Announcement" },
 ];
 
@@ -115,6 +117,8 @@ export default function AdminDashboard() {
           ))}
         </div>
       </div>
+
+      <RoleManagementSection />
 
       {/* Live Mode Toggle */}
       {activeSeason && (

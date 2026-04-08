@@ -66,6 +66,36 @@ export const listForAdmin = query({
   },
 });
 
+/**
+ * Marks a pending invitation as revoked (after Clerk revoke succeeds).
+ * Called from POST /api/invite/revoke after `revokeInvitation`.
+ */
+export const markRevoked = mutation({
+  args: { clerkInvitationId: v.string() },
+  handler: async (ctx, args) => {
+    await requireSuperAdmin(ctx);
+
+    const inv = await ctx.db
+      .query("leagueInvitations")
+      .withIndex("by_clerk_id", (q) =>
+        q.eq("clerkInvitationId", args.clerkInvitationId)
+      )
+      .unique();
+
+    if (!inv) {
+      throw new Error("Invitation not found in league records");
+    }
+    if (inv.status !== "pending") {
+      throw new Error("Only pending invitations can be cancelled");
+    }
+
+    await ctx.db.patch(inv._id, {
+      status: "revoked",
+      revokedAt: Date.now(),
+    });
+  },
+});
+
 /** Called internally from the Clerk webhook when a new user signs up. */
 export const markAcceptedByEmail = internalMutation({
   args: {
