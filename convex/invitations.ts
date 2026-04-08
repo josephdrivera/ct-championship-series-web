@@ -85,6 +85,9 @@ export const markRevoked = mutation({
     if (!inv) {
       throw new Error("Invitation not found in league records");
     }
+    if (inv.status === "revoked") {
+      return;
+    }
     if (inv.status !== "pending") {
       throw new Error("Only pending invitations can be cancelled");
     }

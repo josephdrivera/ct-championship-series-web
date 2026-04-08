@@ -6,6 +6,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { clerkClient, auth } from "@clerk/nextjs/server";
 import { fetchQuery, fetchMutation } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
+import {
+  revokeClerkInvitation,
+  isBenignClerkRevokeFailure,
+  getClerkErrorMessage,
+} from "@/lib/clerk-revoke-invitation";
+
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   const { userId, getToken } = await auth();
@@ -48,19 +55,19 @@ export async function POST(request: NextRequest) {
 
   try {
     const client = await clerkClient();
-    await client.invitations.revokeInvitation(clerkInvitationId);
+    await revokeClerkInvitation(client, clerkInvitationId);
   } catch (err: unknown) {
-    console.error("[api/invite/revoke] Clerk revokeInvitation failed:", err);
-    const message =
-      err && typeof err === "object" && "errors" in err
-        ? String(
-            (err as { errors?: { message?: string }[] }).errors?.[0]?.message ??
-              "Failed to revoke invitation in Clerk"
-          )
-        : err instanceof Error
-          ? err.message
-          : "Failed to revoke invitation in Clerk";
-    return NextResponse.json({ error: message }, { status: 400 });
+    console.error("[api/invite/revoke] Clerk revoke failed:", err);
+    if (!isBenignClerkRevokeFailure(err)) {
+      return NextResponse.json(
+        { error: getClerkErrorMessage(err) },
+        { status: 400 }
+      );
+    }
+    console.warn(
+      "[api/invite/revoke] Clerk reported non-fatal state; syncing Convex only:",
+      err
+    );
   }
 
   try {
@@ -71,7 +78,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (err: unknown) {
     console.error(
-      "[api/invite/revoke] Convex markRevoked failed (Clerk already revoked):",
+      "[api/invite/revoke] Convex markRevoked failed:",
       err
     );
     return NextResponse.json(
@@ -79,8 +86,7 @@ export async function POST(request: NextRequest) {
         error:
           err instanceof Error
             ? err.message
-            : "Invitation was revoked in Clerk but could not update league records.",
-        clerkOnly: true,
+            : "Could not update invitation status in league records.",
       },
       { status: 502 }
     );
