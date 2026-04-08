@@ -24,7 +24,27 @@ function convexClientErrorMessage(err: unknown): string {
     if (err.message.length > 0) return err.message;
   }
   if (err instanceof Error) return err.message;
-  return String(err);
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
+}
+
+function statusForConvexMutationFailure(message: string): number {
+  if (
+    message.includes("Super admin access required") ||
+    message.includes("Authentication required")
+  ) {
+    return 403;
+  }
+  if (
+    message.includes("already accepted") ||
+    message.includes("Only pending invitations")
+  ) {
+    return 409;
+  }
+  return 500;
 }
 
 export const runtime = "nodejs";
@@ -94,10 +114,7 @@ export async function POST(request: NextRequest) {
   } catch (err: unknown) {
     console.error("[api/invite/revoke] Convex deleteInvitation failed:", err);
     const message = convexClientErrorMessage(err);
-    const conflict =
-      message.includes("already accepted") ||
-      message.includes("Only pending invitations");
-    const status = conflict ? 409 : 500;
+    const status = statusForConvexMutationFailure(message);
     return NextResponse.json({ error: message }, { status });
   }
 
