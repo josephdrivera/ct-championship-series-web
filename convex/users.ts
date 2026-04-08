@@ -8,6 +8,7 @@ import { v } from "convex/values";
 import {
   requireSuperAdmin,
   requireCommissioner,
+  requireActiveUser,
 } from "./helpers";
 
 // ── Queries (public, no auth required) ─────────────────────────────
@@ -222,6 +223,18 @@ export const markWelcomeSeen = mutation({
     if (!user) throw new Error("User not found");
 
     await ctx.db.patch(user._id, { hasSeenWelcome: true });
+  },
+});
+
+export const updateMyHandicap = mutation({
+  args: { handicap: v.number() },
+  handler: async (ctx, args) => {
+    const user = await requireActiveUser(ctx);
+    const h = Math.round(args.handicap);
+    if (h < 0 || h > 54) {
+      throw new Error("Handicap must be between 0 and 54");
+    }
+    await ctx.db.patch(user._id, { handicap: h });
   },
 });
 

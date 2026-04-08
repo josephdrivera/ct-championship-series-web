@@ -620,6 +620,7 @@ export default function HomeContent({
           <WelcomeModal
             user={currentUser}
             onClose={() => setWelcomeDismissed(true)}
+            activeEventId={activeEvent?.event._id as Id<"events"> | undefined}
           />
         )}
 

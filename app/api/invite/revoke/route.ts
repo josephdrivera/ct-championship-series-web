@@ -81,15 +81,15 @@ export async function POST(request: NextRequest) {
       "[api/invite/revoke] Convex markRevoked failed:",
       err
     );
-    return NextResponse.json(
-      {
-        error:
-          err instanceof Error
-            ? err.message
-            : "Could not update invitation status in league records.",
-      },
-      { status: 502 }
-    );
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Could not update invitation status in league records.";
+    // 409: invitation already accepted / not cancellable — not a server outage.
+    const status = message.includes("Only pending invitations")
+      ? 409
+      : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 
   return NextResponse.json({ success: true });

@@ -65,7 +65,7 @@ export async function sendInvitationEmail(params: {
   const { error } = await resend.emails.send({
     from: fromAddress(),
     to: params.to,
-    subject: `You're Invited to ${appName()}`,
+    subject: `You're Invited to the ${appName()} Tournament`,
     html,
   });
   if (error) {

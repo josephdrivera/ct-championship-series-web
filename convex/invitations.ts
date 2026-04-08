@@ -82,8 +82,10 @@ export const markRevoked = mutation({
       )
       .unique();
 
+    // Clerk revoke already ran; missing row means Convex never recorded the send
+    // (e.g. recordSent failed) or data drift — treat as success so the API stays idempotent.
     if (!inv) {
-      throw new Error("Invitation not found in league records");
+      return;
     }
     if (inv.status === "revoked") {
       return;

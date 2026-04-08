@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Preloaded, usePreloadedQuery } from "convex/react";
+import { Preloaded, usePreloadedQuery, useQuery, useMutation } from "convex/react";
+import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { formatPoints } from "@/lib/format";
 import {
@@ -83,6 +85,96 @@ function StatCard({
   );
 }
 
+function HandicapCard({ handicap, isOwner }: { handicap?: number; isOwner: boolean }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(handicap !== undefined ? String(handicap) : "");
+  const [saving, setSaving] = useState(false);
+  const updateMyHandicap = useMutation(api.users.updateMyHandicap);
+
+  async function handleSave() {
+    const parsed = parseInt(value, 10);
+    if (isNaN(parsed) || parsed < 0 || parsed > 54) {
+      toast.error("Enter a handicap between 0 and 54");
+      return;
+    }
+    setSaving(true);
+    try {
+      await updateMyHandicap({ handicap: parsed });
+      toast.success("Handicap updated");
+      setEditing(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (editing) {
+    return (
+      <div className="rounded-xl bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min={0}
+            max={54}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="w-16 rounded-lg border border-sand bg-cream px-2 py-1 text-center text-lg font-bold text-dark-green focus:border-augusta focus:outline-none focus:ring-1 focus:ring-augusta"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSave();
+              if (e.key === "Escape") setEditing(false);
+            }}
+          />
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="rounded-lg bg-augusta px-2.5 py-1 text-xs font-semibold text-cream transition-colors hover:bg-deep-green disabled:opacity-50"
+          >
+            Save
+          </button>
+          <button
+            onClick={() => setEditing(false)}
+            className="text-xs text-dark-green/40 hover:text-dark-green/60"
+          >
+            Cancel
+          </button>
+        </div>
+        <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-dark-green/50">
+          Handicap
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="group rounded-xl bg-white p-4 shadow-sm">
+      <div className="flex items-center gap-2">
+        <p className="text-2xl font-bold text-dark-green">
+          {handicap !== undefined ? handicap : "N/A"}
+        </p>
+        {isOwner && (
+          <button
+            onClick={() => {
+              setValue(handicap !== undefined ? String(handicap) : "");
+              setEditing(true);
+            }}
+            className="rounded p-1 text-dark-green/30 opacity-0 transition-all hover:bg-sand/40 hover:text-dark-green/60 group-hover:opacity-100"
+            title="Edit handicap"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
+            </svg>
+          </button>
+        )}
+      </div>
+      <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-dark-green/50">
+        Handicap
+      </p>
+    </div>
+  );
+}
+
 function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"];
   const v = n % 100;
@@ -102,6 +194,8 @@ export default function PlayerProfileContent({
 }: PlayerProfileContentProps) {
   const profile = usePreloadedQuery(preloadedProfile);
   const { user, stats, recentScores, achievements } = profile;
+  const currentUser = useQuery(api.users.getCurrentUser);
+  const isOwner = currentUser?._id === user._id;
 
   const earnedTypes = new Set(achievements.map((a) => a.type));
 
@@ -178,10 +272,7 @@ export default function PlayerProfileContent({
             value={stats.avgScore > 0 ? stats.avgScore.toFixed(1) : "\u2014"}
           />
           <StatCard label="Wins" value={stats.wins} />
-          <StatCard
-            label="Handicap"
-            value={user.handicap !== undefined ? user.handicap : "N/A"}
-          />
+          <HandicapCard handicap={user.handicap} isOwner={isOwner} />
           <StatCard label="Birdies" value={stats.birdies} />
           <StatCard
             label="Standing"
