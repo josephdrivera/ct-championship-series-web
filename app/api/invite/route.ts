@@ -8,7 +8,7 @@ import { clerkClient, auth } from "@clerk/nextjs/server";
 import { fetchQuery, fetchMutation } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { isResendConfigured, sendInvitationEmail } from "@/lib/email";
-import { getSiteOrigin } from "@/lib/site-url";
+import { getSignInUrl } from "@/lib/site-url";
 
 type ClerkErrBody = {
   errors?: Array<{
@@ -96,13 +96,14 @@ function mapClerkErrors(
     };
   }
 
-  // Redirect URL must be in Clerk Dashboard → Paths → Allowed redirect URLs
+  // redirect_url invalid / not allowlisted (Clerk requires https URL + dashboard allowlist)
   if (
     /redirect/i.test(code) ||
+    /valid url/i.test(message) ||
     /redirect url|not allowed|invalid.*redirect/i.test(message)
   ) {
     return {
-      message: `${message} Add this exact URL to Clerk: ${signInUrl} (Dashboard → Configure → Paths).`,
+      message: `${message} Use a full URL (https://…) for NEXT_PUBLIC_SITE_URL, then allow this exact URL in Clerk: ${signInUrl} (Dashboard → Paths / redirect URLs).`,
       status: 400,
     };
   }
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const signInUrl = `${getSiteOrigin(request)}/sign-in`;
+  const signInUrl = getSignInUrl(request);
 
   if (!isResendConfigured()) {
     return NextResponse.json(
