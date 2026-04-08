@@ -89,6 +89,73 @@ export const invitationRowsForAdminRevoke = query({
   },
 });
 
+/** Super-admin: one invitation row for remove-member API and admin UI. */
+export const invitationDetailForSuperAdmin = query({
+  args: { invitationId: v.id("leagueInvitations") },
+  handler: async (ctx, args) => {
+    const viewer = await getCurrentUserOrNull(ctx);
+    if (!viewer?.isSuperAdmin) return null;
+
+    const inv = await ctx.db.get(args.invitationId);
+    if (!inv) return null;
+
+    const member =
+      inv.acceptedUserId !== undefined
+        ? await ctx.db.get(inv.acceptedUserId)
+        : null;
+
+    return {
+      invitationId: inv._id,
+      email: inv.email,
+      status: inv.status,
+      clerkInvitationId: inv.clerkInvitationId,
+      acceptedUserId: inv.acceptedUserId ?? null,
+      memberExists: member !== null,
+      memberClerkId: member?.clerkId ?? null,
+      memberName: member?.name ?? null,
+      memberIsSuperAdmin: member?.isSuperAdmin ?? false,
+    };
+  },
+});
+
+/**
+ * Super-admin: remove only the Convex invitation row — pending invites, stale rows,
+ * or accepted rows whose user record is already gone. Does not delete an active member;
+ * use the remove-accepted API for that.
+ */
+export const superAdminForceDeleteInvitationRow = mutation({
+  args: { invitationId: v.id("leagueInvitations") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await requireSuperAdmin(ctx);
+    const inv = await ctx.db.get(args.invitationId);
+    if (!inv) return null;
+
+    if (inv.status === "pending") {
+      await ctx.db.delete(args.invitationId);
+      return null;
+    }
+
+    if (inv.status === "accepted") {
+      if (!inv.acceptedUserId) {
+        await ctx.db.delete(args.invitationId);
+        return null;
+      }
+      const user = await ctx.db.get(inv.acceptedUserId);
+      if (!user) {
+        await ctx.db.delete(args.invitationId);
+        return null;
+      }
+      throw new ConvexError(
+        "This member still has an account. Use Remove from league to delete their account and email them."
+      );
+    }
+
+    await ctx.db.delete(args.invitationId);
+    return null;
+  },
+});
+
 export const listForAdmin = query({
   args: {},
   handler: async (ctx) => {

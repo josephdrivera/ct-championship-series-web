@@ -179,6 +179,34 @@ export const deletePlayer = mutation({
       }
     }
 
+    // Event check-ins
+    const eventCheckIns = await ctx.db.query("eventCheckIns").collect();
+    for (const c of eventCheckIns) {
+      if (c.userId === args.userId) {
+        await ctx.db.delete(c._id);
+      }
+    }
+
+    // Presence
+    const presenceRows = await ctx.db
+      .query("presence")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+    for (const pr of presenceRows) {
+      await ctx.db.delete(pr._id);
+    }
+
+    // Invitation records (invited by or accepted as this user)
+    const leagueInvites = await ctx.db.query("leagueInvitations").collect();
+    for (const li of leagueInvites) {
+      if (
+        li.acceptedUserId === args.userId ||
+        li.invitedByUserId === args.userId
+      ) {
+        await ctx.db.delete(li._id);
+      }
+    }
+
     // Finally delete the user record
     await ctx.db.delete(args.userId);
   },

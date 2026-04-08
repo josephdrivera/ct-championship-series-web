@@ -47,7 +47,8 @@ function InviteForm() {
         Invite Player
       </h2>
       <p className="mt-1 text-sm text-dark-green/60">
-        Send an email invitation to join the league.
+        Send an email invitation to join the league. Pending and accepted invites
+        appear in the table below.
       </p>
       <form onSubmit={handleInvite} className="mt-4 flex gap-3">
         <input
@@ -198,22 +199,36 @@ function EditPlayerForm({
   );
 }
 
+type LeagueInvitationId = Id<"leagueInvitations">;
+
 function InvitationList({ enabled }: { enabled: boolean }) {
   const invitations = useQuery(
     api.invitations.listForAdmin,
     enabled ? {} : "skip"
   );
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const forceDeleteInvitation = useMutation(
+    api.invitations.superAdminForceDeleteInvitationRow
+  );
+  const [cancellingClerkId, setCancellingClerkId] = useState<string | null>(
+    null
+  );
+  const [clearingId, setClearingId] = useState<string | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<{
+    _id: LeagueInvitationId;
+    email: string;
+    displayName: string;
+  } | null>(null);
+  const [removing, setRemoving] = useState(false);
 
   async function handleCancelInvitation(clerkInvitationId: string) {
-    setCancellingId(clerkInvitationId);
+    setCancellingClerkId(clerkInvitationId);
     try {
       const res = await fetch("/api/invite/revoke", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clerkInvitationId }),
       });
-      const data = await res.json();
+      const data = (await res.json()) as { error?: string };
       if (!res.ok) {
         toast.error(data.error || "Failed to cancel invitation");
       } else {
@@ -222,7 +237,44 @@ function InvitationList({ enabled }: { enabled: boolean }) {
     } catch {
       toast.error("Failed to cancel invitation");
     } finally {
-      setCancellingId(null);
+      setCancellingClerkId(null);
+    }
+  }
+
+  async function handleClearPendingRow(invitationId: LeagueInvitationId) {
+    setClearingId(invitationId as string);
+    try {
+      await forceDeleteInvitation({ invitationId });
+      toast.success("Row removed from the list");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to clear invitation row"
+      );
+    } finally {
+      setClearingId(null);
+    }
+  }
+
+  async function handleRemoveAcceptedMember() {
+    if (!removeTarget) return;
+    setRemoving(true);
+    try {
+      const res = await fetch("/api/invite/remove-accepted", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invitationId: removeTarget._id }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        toast.error(data.error || "Failed to remove member");
+      } else {
+        toast.success("Member removed; they were sent an email.");
+        setRemoveTarget(null);
+      }
+    } catch {
+      toast.error("Failed to remove member");
+    } finally {
+      setRemoving(false);
     }
   }
 
@@ -232,7 +284,7 @@ function InvitationList({ enabled }: { enabled: boolean }) {
     return (
       <div className="mt-4 rounded-xl bg-white p-6 shadow-sm">
         <h2 className="font-serif text-lg font-bold text-dark-green">
-          Invitations
+          Invitations &amp; contacts
         </h2>
         <div className="mt-4 space-y-2">
           {[...Array(3)].map((_, i) => (
@@ -243,78 +295,161 @@ function InvitationList({ enabled }: { enabled: boolean }) {
     );
   }
 
-  if (invitations.length === 0) return null;
-
-  const pending = invitations.filter((inv) => inv.status === "pending");
-  const accepted = invitations.filter((inv) => inv.status === "accepted");
-
   return (
     <div className="mt-4 rounded-xl bg-white p-6 shadow-sm">
       <h2 className="font-serif text-lg font-bold text-dark-green">
-        Invitations
+        Invitations &amp; contacts
       </h2>
+      <p className="mt-1 max-w-3xl text-sm text-dark-green/60">
+        Pending invites can be cancelled (revokes the Clerk link) or cleared from
+        this list if the link was already revoked elsewhere. For members who
+        already joined, use{" "}
+        <span className="font-medium text-dark-green">Remove from league</span>{" "}
+        to email them, delete their login, and remove their league data.
+      </p>
+
       <div className="mt-4 overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-sand text-left">
               <th className="px-3 py-2 font-semibold text-dark-green">Email</th>
-              <th className="px-3 py-2 font-semibold text-dark-green">Status</th>
+              <th className="px-3 py-2 font-semibold text-dark-green">
+                Status
+              </th>
               <th className="px-3 py-2 font-semibold text-dark-green">Sent</th>
-              <th className="px-3 py-2 font-semibold text-dark-green">Player</th>
+              <th className="px-3 py-2 font-semibold text-dark-green">
+                Invited by
+              </th>
+              <th className="px-3 py-2 font-semibold text-dark-green">
+                Member
+              </th>
               <th className="px-3 py-2 font-semibold text-dark-green">
                 Actions
               </th>
             </tr>
           </thead>
           <tbody>
-            {pending.map((inv) => (
-              <tr key={inv._id} className="border-b border-sand/50">
-                <td className="px-3 py-2 text-dark-green">{inv.email}</td>
-                <td className="px-3 py-2">
-                  <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
-                    Pending
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-dark-green/60">
-                  {new Date(inv.sentAt).toLocaleDateString()}
-                </td>
-                <td className="px-3 py-2 text-dark-green/40">—</td>
-                <td className="px-3 py-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void handleCancelInvitation(inv.clerkInvitationId)
-                    }
-                    disabled={cancellingId === inv.clerkInvitationId}
-                    className="rounded-full bg-sand px-3 py-1 text-xs font-medium text-dark-green/70 transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
-                  >
-                    {cancellingId === inv.clerkInvitationId
-                      ? "Cancelling…"
-                      : "Cancel"}
-                  </button>
+            {invitations.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-3 py-8 text-center text-dark-green/50"
+                >
+                  No invitations yet. Send one with the form above.
                 </td>
               </tr>
-            ))}
-            {accepted.map((inv) => (
-              <tr key={inv._id} className="border-b border-sand/50">
-                <td className="px-3 py-2 text-dark-green">{inv.email}</td>
-                <td className="px-3 py-2">
-                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-                    Accepted
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-dark-green/60">
-                  {new Date(inv.sentAt).toLocaleDateString()}
-                </td>
-                <td className="px-3 py-2 font-medium text-dark-green">
-                  {inv.acceptedUserName ?? "—"}
-                </td>
-                <td className="px-3 py-2 text-dark-green/40">—</td>
-              </tr>
-            ))}
+            ) : (
+              invitations.map((inv) => (
+                <tr key={inv._id} className="border-b border-sand/50">
+                  <td className="px-3 py-2 text-dark-green">{inv.email}</td>
+                  <td className="px-3 py-2">
+                    {inv.status === "pending" ? (
+                      <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                        Pending
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                        Accepted
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-dark-green/60">
+                    {new Date(inv.sentAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-3 py-2 text-dark-green/70">
+                    {inv.invitedByName ?? "—"}
+                  </td>
+                  <td className="px-3 py-2 text-dark-green">
+                    {inv.acceptedUserName ?? "—"}
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {inv.status === "pending" && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void handleCancelInvitation(inv.clerkInvitationId)
+                            }
+                            disabled={
+                              cancellingClerkId === inv.clerkInvitationId
+                            }
+                            className="rounded-full bg-sand px-3 py-1 text-xs font-medium text-dark-green/70 transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+                          >
+                            {cancellingClerkId === inv.clerkInvitationId
+                              ? "Cancelling…"
+                              : "Cancel invite"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void handleClearPendingRow(inv._id)
+                            }
+                            disabled={clearingId === (inv._id as string)}
+                            className="rounded-full border border-sand px-3 py-1 text-xs font-medium text-dark-green/50 transition-colors hover:bg-cream disabled:opacity-50"
+                            title="Removes this row only. Use if the invite was already revoked in Clerk but still appears here."
+                          >
+                            {clearingId === (inv._id as string)
+                              ? "Clearing…"
+                              : "Clear from list"}
+                          </button>
+                        </>
+                      )}
+                      {inv.status === "accepted" && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setRemoveTarget({
+                              _id: inv._id,
+                              email: inv.email,
+                              displayName:
+                                inv.acceptedUserName?.trim() || inv.email,
+                            })
+                          }
+                          className="rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-800 transition-colors hover:bg-red-100"
+                        >
+                          Remove from league
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      {removeTarget && (
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-sm text-dark-green">
+            Remove{" "}
+            <span className="font-semibold">{removeTarget.displayName}</span>{" "}
+            <span className="text-dark-green/60">({removeTarget.email})</span>{" "}
+            from the league? They will receive an email that their membership was
+            canceled. Their Clerk login and all league data for this account will
+            be deleted. This cannot be undone.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setRemoveTarget(null)}
+              disabled={removing}
+              className="rounded-full px-4 py-1.5 text-sm font-medium text-dark-green/60 transition-colors hover:text-dark-green"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleRemoveAcceptedMember()}
+              disabled={removing}
+              className="rounded-full bg-red-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+            >
+              {removing ? "Removing…" : "Remove member & send email"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
