@@ -23,7 +23,7 @@ export const getCurrentUser = query({
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
+      .first();
     return user;
   },
 });
@@ -219,7 +219,7 @@ export const markWelcomeSeen = mutation({
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
+      .first();
     if (!user) throw new Error("User not found");
 
     await ctx.db.patch(user._id, { hasSeenWelcome: true });
@@ -333,7 +333,7 @@ export const upsertFromClerk = internalMutation({
     const existingUser = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .unique();
+      .first();
 
     if (existingUser) {
       await ctx.db.patch(existingUser._id, {

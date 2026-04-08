@@ -21,7 +21,7 @@ export async function getCurrentUserOrNull(
   return await ctx.db
     .query("users")
     .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-    .unique();
+    .first();
 }
 
 /**

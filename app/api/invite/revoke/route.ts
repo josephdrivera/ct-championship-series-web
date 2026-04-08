@@ -60,11 +60,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const currentUser = await fetchQuery(
-    api.users.getCurrentUser,
-    {},
-    { token }
-  );
+  let currentUser;
+  try {
+    currentUser = await fetchQuery(
+      api.users.getCurrentUser,
+      {},
+      { token }
+    );
+  } catch (err: unknown) {
+    console.error("[api/invite/revoke] getCurrentUser failed:", err);
+    return NextResponse.json(
+      { error: convexClientErrorMessage(err) },
+      { status: 500 }
+    );
+  }
   if (!currentUser?.isSuperAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
