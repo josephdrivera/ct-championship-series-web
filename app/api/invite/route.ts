@@ -8,7 +8,7 @@ import { clerkClient, auth } from "@clerk/nextjs/server";
 import { fetchQuery, fetchMutation } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { isResendConfigured, sendInvitationEmail } from "@/lib/email";
-import { getSignInUrl } from "@/lib/site-url";
+import { getSignUpUrl } from "@/lib/site-url";
 
 type ClerkErrBody = {
   errors?: Array<{
@@ -40,13 +40,13 @@ function unwrapClerkErrorList(err: unknown): ClerkErrBody["errors"] | undefined 
 
 function parseClerkInvitationFailure(
   err: unknown,
-  signInUrl: string
+  signUpUrl: string
 ): { message: string; status: number } {
   const fallback = "Failed to send invitation";
 
   const errors = unwrapClerkErrorList(err);
   if (errors?.length) {
-    return mapClerkErrors(errors, signInUrl);
+    return mapClerkErrors(errors, signUpUrl);
   }
 
   if (err && typeof err === "object" && "message" in err) {
@@ -65,7 +65,7 @@ function parseClerkInvitationFailure(
 
 function mapClerkErrors(
   errors: NonNullable<ClerkErrBody["errors"]>,
-  signInUrl: string
+  signUpUrl: string
 ): { message: string; status: number } {
   const first = errors[0];
   const code = first?.code ?? "";
@@ -103,7 +103,7 @@ function mapClerkErrors(
     /redirect url|not allowed|invalid.*redirect/i.test(message)
   ) {
     return {
-      message: `${message} Use a full URL (https://…) for NEXT_PUBLIC_SITE_URL, then allow this exact URL in Clerk: ${signInUrl} (Dashboard → Paths / redirect URLs).`,
+      message: `${message} Use a full URL (https://…) for NEXT_PUBLIC_SITE_URL, then allow this exact URL in Clerk: ${signUpUrl} (Dashboard → Paths / redirect URLs).`,
       status: 400,
     };
   }
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const signInUrl = getSignInUrl(request);
+  const signUpUrl = getSignUpUrl(request);
 
   if (!isResendConfigured()) {
     return NextResponse.json(
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
     const client = await clerkClient();
     const invitation = await client.invitations.createInvitation({
       emailAddress,
-      redirectUrl: signInUrl,
+      redirectUrl: signUpUrl,
       notify: false,
     });
 
@@ -207,7 +207,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, id: invitation.id });
   } catch (err: unknown) {
     console.error("[api/invite] Clerk createInvitation failed:", err);
-    const { message, status } = parseClerkInvitationFailure(err, signInUrl);
+    const { message, status } = parseClerkInvitationFailure(err, signUpUrl);
     return NextResponse.json({ error: message }, { status });
   }
 }

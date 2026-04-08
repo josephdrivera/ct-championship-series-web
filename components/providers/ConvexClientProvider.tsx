@@ -27,7 +27,7 @@ export default function ConvexClientProvider({
   const key = clerkPublishableKey?.trim() || null;
 
   return key ? (
-    <ClerkProvider publishableKey={key}>
+    <ClerkProvider publishableKey={key} signInUrl="/sign-in" signUpUrl="/sign-up">
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         {children}
       </ConvexProviderWithClerk>

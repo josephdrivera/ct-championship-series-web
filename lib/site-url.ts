@@ -45,7 +45,12 @@ export function getSiteOrigin(request: NextRequest): string {
   return request.nextUrl.origin;
 }
 
-/** Absolute sign-in URL for Clerk invitation `redirect_url` (must be a valid absolute URL). */
+/** Absolute sign-in URL for Clerk redirect (must be a valid absolute URL). */
 export function getSignInUrl(request: NextRequest): string {
   return new URL("/sign-in", getSiteOrigin(request)).href;
+}
+
+/** Absolute sign-up URL for Clerk invitation `redirect_url` (must be a valid absolute URL). */
+export function getSignUpUrl(request: NextRequest): string {
+  return new URL("/sign-up", getSiteOrigin(request)).href;
 }

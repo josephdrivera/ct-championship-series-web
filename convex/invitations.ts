@@ -2,9 +2,31 @@
  * League invitation tracking: records sent invitations and marks them
  * accepted when a new user signs up via the Clerk webhook.
  */
-import { query, mutation, internalMutation } from "./_generated/server";
+import {
+  query,
+  mutation,
+  internalMutation,
+  type MutationCtx,
+} from "./_generated/server";
 import { v } from "convex/values";
 import { getCurrentUserOrNull, requireSuperAdmin } from "./helpers";
+
+/** Shared by super-admin cancel API and Clerk `invitation.revoked` webhook. */
+async function removeInvitationRowAfterRevoke(
+  ctx: MutationCtx,
+  clerkInvitationId: string
+): Promise<"deleted" | "missing" | "accepted"> {
+  const inv = await ctx.db
+    .query("leagueInvitations")
+    .withIndex("by_clerk_id", (q) =>
+      q.eq("clerkInvitationId", clerkInvitationId)
+    )
+    .unique();
+  if (!inv) return "missing";
+  if (inv.status === "accepted") return "accepted";
+  await ctx.db.delete(inv._id);
+  return "deleted";
+}
 
 export const recordSent = mutation({
   args: {
@@ -76,24 +98,27 @@ export const deleteInvitation = mutation({
   handler: async (ctx, args) => {
     await requireSuperAdmin(ctx);
 
-    const inv = await ctx.db
-      .query("leagueInvitations")
-      .withIndex("by_clerk_id", (q) =>
-        q.eq("clerkInvitationId", args.clerkInvitationId)
-      )
-      .unique();
-
-    // Clerk revoke already ran; nothing to delete — idempotent.
-    if (!inv) {
-      return;
-    }
-    if (inv.status === "accepted") {
+    const result = await removeInvitationRowAfterRevoke(
+      ctx,
+      args.clerkInvitationId
+    );
+    if (result === "missing") return;
+    if (result === "accepted") {
       throw new Error(
         "This invitation was already accepted; it cannot be removed from the list."
       );
     }
-    // pending or legacy "revoked" rows — remove entirely
-    await ctx.db.delete(inv._id);
+  },
+});
+
+/**
+ * Clerk Dashboard / API revoke → `invitation.revoked` webhook. Keeps Convex in sync
+ * when staff remove an invite outside the app.
+ */
+export const deleteByClerkInvitationId = internalMutation({
+  args: { clerkInvitationId: v.string() },
+  handler: async (ctx, args) => {
+    await removeInvitationRowAfterRevoke(ctx, args.clerkInvitationId);
   },
 });
 

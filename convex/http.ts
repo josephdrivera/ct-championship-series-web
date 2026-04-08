@@ -2,6 +2,10 @@
  * Convex HTTP routes. Clerk webhooks are verified here (not on Vercel).
  * Set CLERK_WEBHOOK_SECRET in the Convex dashboard (production); point Clerk’s webhook URL to
  * https://<deployment>.convex.site/clerk-webhook
+ *
+ * In Clerk Dashboard → Webhooks → your endpoint, subscribe at least to:
+ * `user.created`, `user.updated`, and `invitation.revoked` (so Convex deletes league
+ * invitation rows when an invite is revoked in Clerk).
  */
 import { httpAction } from "./_generated/server";
 import { httpRouter } from "convex/server";
@@ -18,6 +22,12 @@ type ClerkUserWebhookEvent = {
     primary_email_address_id?: string | null;
     email_addresses?: { id: string; email_address: string }[];
   };
+};
+
+/** `invitation.revoked` — data is the Invitation object; `id` is the Clerk invitation id. */
+type ClerkInvitationWebhookEvent = {
+  type: string;
+  data: { id: string };
 };
 
 const http = httpRouter();
@@ -43,13 +53,13 @@ http.route({
     const body = await request.text();
 
     const wh = new Webhook(webhookSecret);
-    let event: ClerkUserWebhookEvent;
+    let event: ClerkUserWebhookEvent | ClerkInvitationWebhookEvent;
     try {
       event = wh.verify(body, {
         "svix-id": svixId,
         "svix-timestamp": svixTimestamp,
         "svix-signature": svixSignature,
-      }) as ClerkUserWebhookEvent;
+      }) as ClerkUserWebhookEvent | ClerkInvitationWebhookEvent;
     } catch (err) {
       console.error("Webhook verification failed:", err);
       return new Response("Invalid webhook signature", { status: 400 });
@@ -57,9 +67,21 @@ http.route({
 
     const eventType = event.type;
 
+    if (eventType === "invitation.revoked") {
+      const invEvent = event as ClerkInvitationWebhookEvent;
+      const clerkInvitationId = invEvent.data?.id?.trim() ?? "";
+      if (clerkInvitationId) {
+        await ctx.runMutation(
+          internal.invitations.deleteByClerkInvitationId,
+          { clerkInvitationId }
+        );
+      }
+    }
+
     if (eventType === "user.created" || eventType === "user.updated") {
+      const userEvent = event as ClerkUserWebhookEvent;
       const { id, first_name, last_name, image_url, email_addresses, primary_email_address_id } =
-        event.data;
+        userEvent.data;
       const name =
         [first_name, last_name].filter(Boolean).join(" ") || "Unknown";
 
