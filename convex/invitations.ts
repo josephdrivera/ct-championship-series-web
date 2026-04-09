@@ -126,20 +126,35 @@ export const invitationDetailForSuperAdmin = query({
 export const superAdminForceDeleteInvitationRow = mutation({
   args: { invitationId: v.id("leagueInvitations") },
   handler: async (ctx, args) => {
-    try {
-      await requireSuperAdmin(ctx);
-    } catch (e) {
-      console.error("superAdminForceDeleteInvitationRow auth error:", e);
-      if (e instanceof ConvexError) throw e;
-      throw new ConvexError("Authentication failed — please refresh and try again");
+    // Inline auth check with detailed logging
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      console.error("[forceDelete] No identity found — user not authenticated");
+      throw new ConvexError("Not authenticated — please refresh and try again");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .first();
+    if (!user) {
+      console.error("[forceDelete] No user record for subject:", identity.subject);
+      throw new ConvexError("User record not found — please refresh and try again");
+    }
+    if (!user.isSuperAdmin) {
+      console.error("[forceDelete] User is not super admin:", user._id);
+      throw new ConvexError("Super admin access required");
     }
 
     const inv = await ctx.db.get(args.invitationId);
-    if (!inv) return { deleted: false, reason: "already_gone" };
+    if (!inv) {
+      // Already gone — that's fine, the goal was to remove it
+      return { deleted: false, reason: "already_gone" };
+    }
 
     if (inv.status === "accepted" && inv.acceptedUserId) {
-      const user = await ctx.db.get(inv.acceptedUserId);
-      if (user) {
+      const member = await ctx.db.get(inv.acceptedUserId);
+      if (member) {
         throw new ConvexError(
           "This member still has an account. Use Remove from league to delete their account and email them."
         );
@@ -147,6 +162,7 @@ export const superAdminForceDeleteInvitationRow = mutation({
     }
 
     await ctx.db.delete(args.invitationId);
+    console.log("[forceDelete] Deleted invitation row:", args.invitationId);
     return { deleted: true, reason: "removed" };
   },
 });
@@ -190,17 +206,30 @@ export const listForAdmin = query({
 export const deleteInvitation = mutation({
   args: { clerkInvitationId: v.string() },
   handler: async (ctx, args) => {
-    try {
-      await requireSuperAdmin(ctx);
-    } catch (e) {
-      if (e instanceof ConvexError) throw e;
-      throw new ConvexError("Authentication failed — please refresh and try again");
+    // Inline auth check with logging
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      console.error("[deleteInvitation] No identity found");
+      throw new ConvexError("Not authenticated — please refresh and try again");
+    }
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .first();
+    if (!user) {
+      console.error("[deleteInvitation] No user record for subject:", identity.subject);
+      throw new ConvexError("User record not found — please refresh and try again");
+    }
+    if (!user.isSuperAdmin) {
+      console.error("[deleteInvitation] User is not super admin:", user._id);
+      throw new ConvexError("Super admin access required");
     }
 
     const result = await removeInvitationRowAfterRevoke(
       ctx,
       args.clerkInvitationId
     );
+    console.log("[deleteInvitation] result:", result, "for clerkId:", args.clerkInvitationId);
     if (result === "missing") return;
     if (result === "accepted") {
       throw new ConvexError(
