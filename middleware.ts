@@ -11,6 +11,10 @@ const isPublicRoute = createRouteMatcher([
   "/history(.*)",
   "/live(.*)",
   "/api/webhooks(.*)",
+  /** PWA / crawlers — must not require Clerk session */
+  "/manifest.json",
+  "/robots.txt",
+  "/sitemap.xml",
 ]);
 
 export default clerkMiddleware(async (auth, request) => {

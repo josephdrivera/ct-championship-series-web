@@ -7,6 +7,7 @@ import { clerkClient, auth } from "@clerk/nextjs/server";
 import { fetchQuery, fetchMutation } from "convex/nextjs";
 import { ConvexError } from "convex/values";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import {
   revokeClerkInvitation,
   isBenignClerkRevokeFailure,
@@ -74,11 +75,11 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-  if (!currentUser?.isSuperAdmin) {
+  if (currentUser?.isSuperAdmin !== true) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let body: { clerkInvitationId?: unknown };
+  let body: { clerkInvitationId?: unknown; invitationId?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -90,35 +91,42 @@ export async function POST(request: NextRequest) {
       ? body.clerkInvitationId.trim()
       : "";
 
-  if (!clerkInvitationId) {
+  const invitationIdRaw =
+    typeof body.invitationId === "string" ? body.invitationId.trim() : "";
+
+  if (!clerkInvitationId && !invitationIdRaw) {
     return NextResponse.json(
-      { error: "clerkInvitationId is required" },
+      { error: "clerkInvitationId or invitationId is required" },
       { status: 400 }
     );
   }
 
   let clerkAlreadyRevoked = false;
-  try {
-    const client = await clerkClient();
-    await revokeClerkInvitation(client, clerkInvitationId);
-  } catch (err: unknown) {
-    if (!isBenignClerkRevokeFailure(err)) {
-      console.error("[api/invite/revoke] Clerk revoke failed:", err);
-      return NextResponse.json(
-        { error: getClerkErrorMessage(err) },
-        { status: 400 }
+  if (clerkInvitationId) {
+    try {
+      const client = await clerkClient();
+      await revokeClerkInvitation(client, clerkInvitationId);
+    } catch (err: unknown) {
+      if (!isBenignClerkRevokeFailure(err)) {
+        console.error("[api/invite/revoke] Clerk revoke failed:", err);
+        return NextResponse.json(
+          { error: getClerkErrorMessage(err) },
+          { status: 400 }
+        );
+      }
+      clerkAlreadyRevoked = true;
+      console.warn(
+        "[api/invite/revoke] Clerk invitation already inactive; checking Convex sync:",
+        err
       );
     }
+  } else {
     clerkAlreadyRevoked = true;
-    console.warn(
-      "[api/invite/revoke] Clerk invitation already inactive; checking Convex sync:",
-      err
-    );
   }
 
   // Clerk may have revoked first (or webhook deleted our row). If Convex already
   // has no rows, skip fetchMutation — avoids a no-op mutation when prod hides errors.
-  if (clerkAlreadyRevoked) {
+  if (clerkAlreadyRevoked && clerkInvitationId) {
     try {
       const sync = await fetchQuery(
         api.invitations.invitationRowsForAdminRevoke,
@@ -127,9 +135,6 @@ export async function POST(request: NextRequest) {
       );
       if (!sync.ok) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-      if (sync.count === 0) {
-        return NextResponse.json({ success: true });
       }
       if (sync.hasAccepted) {
         return NextResponse.json(
@@ -149,17 +154,35 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  try {
-    await fetchMutation(
-      api.invitations.deleteInvitation,
-      { clerkInvitationId },
-      { token }
-    );
-  } catch (err: unknown) {
-    console.error("[api/invite/revoke] Convex deleteInvitation failed:", err);
-    const message = convexClientErrorMessage(err);
-    const status = statusForConvexMutationFailure(message);
-    return NextResponse.json({ error: message }, { status });
+  if (clerkInvitationId) {
+    try {
+      await fetchMutation(
+        api.invitations.deleteInvitation,
+        { clerkInvitationId },
+        { token }
+      );
+    } catch (err: unknown) {
+      console.error("[api/invite/revoke] Convex deleteInvitation failed:", err);
+      const message = convexClientErrorMessage(err);
+      const status = statusForConvexMutationFailure(message);
+      return NextResponse.json({ error: message }, { status });
+    }
+  }
+
+  // Best-effort: delete by Convex document id (fixes stuck rows / Clerk id mismatch).
+  if (invitationIdRaw) {
+    try {
+      await fetchMutation(
+        api.invitations.superAdminForceDeleteInvitationRow,
+        { invitationId: invitationIdRaw as Id<"leagueInvitations"> },
+        { token }
+      );
+    } catch (err: unknown) {
+      console.warn(
+        "[api/invite/revoke] optional invitationId cleanup:",
+        err
+      );
+    }
   }
 
   return NextResponse.json({ success: true });

@@ -223,9 +223,9 @@ function InvitationList({ enabled }: { enabled: boolean }) {
   const forceDeleteInvitation = useMutation(
     api.invitations.superAdminForceDeleteInvitationRow
   );
-  const [cancellingClerkId, setCancellingClerkId] = useState<string | null>(
-    null
-  );
+  const [cancellingInvitationId, setCancellingInvitationId] = useState<
+    string | null
+  >(null);
   const [clearingId, setClearingId] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{
     _id: LeagueInvitationId;
@@ -234,13 +234,16 @@ function InvitationList({ enabled }: { enabled: boolean }) {
   } | null>(null);
   const [removing, setRemoving] = useState(false);
 
-  async function handleCancelInvitation(clerkInvitationId: string) {
-    setCancellingClerkId(clerkInvitationId);
+  async function handleCancelInvitation(
+    clerkInvitationId: string,
+    invitationId: LeagueInvitationId
+  ) {
+    setCancellingInvitationId(invitationId as string);
     try {
       const res = await fetch("/api/invite/revoke", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clerkInvitationId }),
+        body: JSON.stringify({ clerkInvitationId, invitationId }),
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
@@ -251,7 +254,7 @@ function InvitationList({ enabled }: { enabled: boolean }) {
     } catch {
       toast.error("Failed to cancel invitation");
     } finally {
-      setCancellingClerkId(null);
+      setCancellingInvitationId(null);
     }
   }
 
@@ -383,14 +386,17 @@ function InvitationList({ enabled }: { enabled: boolean }) {
                           <button
                             type="button"
                             onClick={() =>
-                              void handleCancelInvitation(inv.clerkInvitationId)
+                              void handleCancelInvitation(
+                                inv.clerkInvitationId,
+                                inv._id
+                              )
                             }
                             disabled={
-                              cancellingClerkId === inv.clerkInvitationId
+                              cancellingInvitationId === (inv._id as string)
                             }
                             className="rounded-full bg-sand px-3 py-1 text-xs font-medium text-dark-green/70 transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
                           >
-                            {cancellingClerkId === inv.clerkInvitationId
+                            {cancellingInvitationId === (inv._id as string)
                               ? "Cancelling…"
                               : "Cancel invite"}
                           </button>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
+import { Analytics } from "@vercel/analytics/next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
@@ -69,6 +70,7 @@ export default async function RootLayout({
           {children}
           <CookieBanner />
           <ServiceWorkerRegistrar />
+          <Analytics />
         </ConvexClientProvider>
       </body>
     </html>
