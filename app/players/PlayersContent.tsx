@@ -163,9 +163,16 @@ export default function PlayersContent({
                   <PlayerAvatar name={player.name} photo={player.photo} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <h2 className="truncate font-serif text-lg font-bold text-dark-green transition-colors group-hover:text-augusta">
-                        {player.name}
-                      </h2>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <h2 className="truncate font-serif text-lg font-bold text-dark-green transition-colors group-hover:text-augusta">
+                          {player.name}
+                        </h2>
+                        {player.isSuspended && (
+                          <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                            Suspended
+                          </span>
+                        )}
+                      </div>
                       {standing ? (
                         <span
                           className={`text-sm font-semibold ${

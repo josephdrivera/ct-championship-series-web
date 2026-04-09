@@ -242,9 +242,16 @@ export default function PlayerProfileContent({
           <div className="flex flex-col items-center gap-6 md:flex-row">
             <PlayerAvatar name={user.name} photo={user.photo} size="lg" />
             <div className="text-center md:text-left">
-              <h1 className="font-serif text-3xl font-bold tracking-tight md:text-4xl">
-                {user.name}
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="font-serif text-3xl font-bold tracking-tight md:text-4xl">
+                  {user.name}
+                </h1>
+                {user.isSuspended && (
+                  <span className="rounded-full bg-red-500/20 px-3 py-0.5 text-xs font-medium text-red-300">
+                    Suspended
+                  </span>
+                )}
+              </div>
               <p className="mt-1 text-cream/60">
                 Member since {user.joinedYear}
               </p>
