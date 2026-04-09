@@ -129,12 +129,13 @@ export const superAdminForceDeleteInvitationRow = mutation({
     try {
       await requireSuperAdmin(ctx);
     } catch (e) {
+      console.error("superAdminForceDeleteInvitationRow auth error:", e);
       if (e instanceof ConvexError) throw e;
       throw new ConvexError("Authentication failed — please refresh and try again");
     }
 
     const inv = await ctx.db.get(args.invitationId);
-    if (!inv) return;
+    if (!inv) return { deleted: false, reason: "already_gone" };
 
     if (inv.status === "accepted" && inv.acceptedUserId) {
       const user = await ctx.db.get(inv.acceptedUserId);
@@ -145,12 +146,8 @@ export const superAdminForceDeleteInvitationRow = mutation({
       }
     }
 
-    try {
-      await ctx.db.delete(args.invitationId);
-    } catch (e) {
-      if (e instanceof ConvexError) throw e;
-      throw new ConvexError("Failed to delete invitation row — it may have been removed already");
-    }
+    await ctx.db.delete(args.invitationId);
+    return { deleted: true, reason: "removed" };
   },
 });
 

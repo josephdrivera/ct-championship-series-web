@@ -108,7 +108,9 @@ export async function POST(request: NextRequest) {
 
   /* ── 2. Convex cleanup (best-effort, never causes 500) ────────── */
   const warnings: string[] = [];
+  let convexRowDeleted = false;
 
+  // Primary: delete by Clerk invitation ID
   if (clerkInvitationId) {
     try {
       await fetchMutation(
@@ -116,6 +118,7 @@ export async function POST(request: NextRequest) {
         { clerkInvitationId },
         { token }
       );
+      convexRowDeleted = true;
     } catch (err: unknown) {
       const msg = extractErrorMessage(err);
       console.warn("[api/invite/revoke] deleteInvitation:", msg);
@@ -129,7 +132,8 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (invitationId) {
+  // Fallback: delete by Convex document ID (only if primary didn't succeed)
+  if (!convexRowDeleted && invitationId) {
     try {
       await fetchMutation(
         api.invitations.superAdminForceDeleteInvitationRow,
