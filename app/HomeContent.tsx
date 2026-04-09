@@ -12,6 +12,7 @@ import { formatPoints } from "@/lib/format";
 import CountdownTimer from "@/components/CountdownTimer";
 import WelcomeModal from "@/components/modals/WelcomeModal";
 import EventCountdownModal from "@/components/modals/EventCountdownModal";
+import AnnouncementModal from "@/components/modals/AnnouncementModal";
 import confetti from "canvas-confetti";
 
 const fadeUp = {
@@ -202,8 +203,13 @@ export default function HomeContent({
   const standings = usePreloadedQuery(preloadedStandings);
   const events = usePreloadedQuery(preloadedEvents);
   const currentUser = useQuery(api.users.getCurrentUser);
+  const unreadAnnouncement = useQuery(
+    api.notifications.getUnreadAnnouncement,
+    currentUser ? {} : "skip"
+  );
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [dismissedAnnouncementId, setDismissedAnnouncementId] = useState<string | null>(null);
   const confettiFired = useRef(false);
 
   // Fire confetti for new players, then show welcome modal after delay
@@ -647,8 +653,23 @@ export default function HomeContent({
           />
         )}
 
-        {/* Event Countdown Modal — upcoming event within 3 days */}
+        {/* Announcement Modal — blocks everything until confirmed */}
+        {currentUser &&
+          (currentUser.hasSeenWelcome || welcomeDismissed) &&
+          unreadAnnouncement &&
+          unreadAnnouncement._id !== dismissedAnnouncementId && (
+            <AnnouncementModal
+              notificationId={unreadAnnouncement._id}
+              title={unreadAnnouncement.title}
+              body={unreadAnnouncement.body}
+              createdAt={unreadAnnouncement.createdAt}
+              onConfirmed={() => setDismissedAnnouncementId(unreadAnnouncement._id)}
+            />
+          )}
+
+        {/* Event Countdown Modal — only after announcements are cleared */}
         {currentUser?.hasSeenWelcome &&
+          !unreadAnnouncement &&
           upcomingEntry &&
           upcomingEntry.event.status === "upcoming" && (
             <EventCountdownModal

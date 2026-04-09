@@ -88,6 +88,28 @@ export const deleteNotification = mutation({
   },
 });
 
+/** Returns the oldest unread announcement for the current user (if any). */
+export const getUnreadAnnouncement = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireUser(ctx);
+
+    const unread = await ctx.db
+      .query("notifications")
+      .withIndex("by_user_unread", (q) =>
+        q.eq("userId", user._id).eq("isRead", false)
+      )
+      .collect();
+
+    // Return the oldest unread announcement so users see them in order
+    const announcement = unread
+      .filter((n) => n.type === "announcement")
+      .sort((a, b) => a.createdAt - b.createdAt)[0];
+
+    return announcement ?? null;
+  },
+});
+
 // ── Commissioner broadcast (requireCommissioner) ───────────────────
 
 export const sendAnnouncement = mutation({
