@@ -6,7 +6,7 @@
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import { requireUser, requireCommissioner } from "./helpers";
+import { requireUser, requireCommissioner, getCurrentUserOrNull } from "./helpers";
 
 // ── User inbox (requireUser) ───────────────────────────────────────
 
@@ -92,7 +92,8 @@ export const deleteNotification = mutation({
 export const getUnreadAnnouncement = query({
   args: {},
   handler: async (ctx) => {
-    const user = await requireUser(ctx);
+    const user = await getCurrentUserOrNull(ctx);
+    if (!user) return null;
 
     const unread = await ctx.db
       .query("notifications")
