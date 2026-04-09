@@ -105,6 +105,10 @@ export async function calculateAndApplyEventPoints(
   const event = await ctx.db.get(eventId);
   if (!event) throw new Error("Event not found");
 
+  // Mark event as completed immediately to prevent concurrent finalization
+  if (event.status === "completed") return; // already finalized
+  await ctx.db.patch(eventId, { status: "completed" as const });
+
   const multiplier = event.multiplier;
 
   const scores = await ctx.db
@@ -184,9 +188,6 @@ export async function calculateAndApplyEventPoints(
       });
     }
   }
-
-  // Mark event as completed
-  await ctx.db.patch(eventId, { status: "completed" as const });
 
   // Recalculate season standings
   await recalculateStandings(ctx, event.seasonId);

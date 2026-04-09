@@ -4,8 +4,17 @@
  */
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
 import { requireCommissioner } from "./helpers";
+
+// Valid event status transitions
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  upcoming: ["active", "canceled"],
+  active: ["completed", "canceled"],
+  completed: [],
+  canceled: [],
+};
 
 // ── Storage (commissioner) ─────────────────────────────────────────
 
@@ -138,6 +147,16 @@ export const updateEvent = mutation({
 
     const { eventId, ...updates } = args;
 
+    // Enforce valid status transitions
+    if (args.status !== undefined && args.status !== event.status) {
+      const allowed = VALID_TRANSITIONS[event.status] ?? [];
+      if (!allowed.includes(args.status)) {
+        throw new ConvexError(
+          `Cannot change event from "${event.status}" to "${args.status}"`
+        );
+      }
+    }
+
     // Recalculate multiplier if isMajor changes
     const patch: Record<string, unknown> = { ...updates };
     if (args.isMajor !== undefined) {
@@ -145,6 +164,19 @@ export const updateEvent = mutation({
     }
 
     await ctx.db.patch(eventId, patch);
+
+    // Clean up active rounds when canceling
+    if (args.status === "canceled" && event.status !== "canceled") {
+      const activeRounds = await ctx.db
+        .query("liveRounds")
+        .withIndex("by_event_status", (q) =>
+          q.eq("eventId", eventId).eq("status", "inProgress")
+        )
+        .collect();
+      for (const round of activeRounds) {
+        await ctx.db.patch(round._id, { status: "withdrawn" as const });
+      }
+    }
 
     // Notify on cancellation
     if (args.status === "canceled" && event.status !== "canceled") {

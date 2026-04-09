@@ -282,7 +282,12 @@ export const completeRound = mutation({
     );
 
     if (allDone) {
-      await calculateAndApplyEventPoints(ctx, round.eventId);
+      // Guard against concurrent finalization — if another mutation already
+      // completed this event, skip to avoid duplicate point calculations.
+      const event = await ctx.db.get(round.eventId);
+      if (event && event.status !== "completed") {
+        await calculateAndApplyEventPoints(ctx, round.eventId);
+      }
     }
   },
 });

@@ -16,6 +16,9 @@ export default function SignInPage() {
               colorInputBackground: "#FFFFFF",
               colorInputText: "#001A11",
             },
+            elements: {
+              footerAction: { display: "none" },
+            },
           }}
         />
       </div>

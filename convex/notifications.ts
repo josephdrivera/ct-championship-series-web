@@ -248,5 +248,35 @@ export const notifyAllPlayers = internalMutation({
       title: args.title,
       body: args.body,
     });
+
+    // Schedule cleanup of old read notifications
+    await ctx.scheduler.runAfter(0, internal.notifications.cleanupOldNotifications, {});
+  },
+});
+
+const MAX_NOTIFICATIONS_PER_USER = 100;
+
+/** Trims each user's notification inbox to the most recent MAX_NOTIFICATIONS_PER_USER. */
+export const cleanupOldNotifications = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const allUsers = await ctx.db.query("users").collect();
+
+    for (const user of allUsers) {
+      const notifications = await ctx.db
+        .query("notifications")
+        .withIndex("by_user_created", (q) => q.eq("userId", user._id))
+        .order("desc")
+        .collect();
+
+      // Keep the newest MAX, delete the rest (only read ones)
+      const toDelete = notifications
+        .slice(MAX_NOTIFICATIONS_PER_USER)
+        .filter((n) => n.isRead);
+
+      for (const n of toDelete) {
+        await ctx.db.delete(n._id);
+      }
+    }
   },
 });

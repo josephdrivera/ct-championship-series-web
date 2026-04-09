@@ -3,7 +3,7 @@
  * commissioner mutations (create, update status, toggle live mode).
  */
 import { query, mutation } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
 import { requireCommissioner } from "./helpers";
 
@@ -92,6 +92,20 @@ export const updateSeason = mutation({
     if (!season) throw new Error("Season not found");
 
     const { seasonId, ...updates } = args;
+
+    // Prevent multiple active seasons
+    if (updates.status === "active" && season.status !== "active") {
+      const existingActive = await ctx.db
+        .query("seasons")
+        .withIndex("by_status", (q) => q.eq("status", "active"))
+        .first();
+      if (existingActive && existingActive._id !== seasonId) {
+        throw new ConvexError(
+          `Season "${existingActive.name}" is already active. Complete or deactivate it first.`
+        );
+      }
+    }
+
     const patch: Record<string, unknown> = {};
     if (updates.name !== undefined) patch.name = updates.name;
     if (updates.status !== undefined) patch.status = updates.status;
