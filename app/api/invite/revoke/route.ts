@@ -1,6 +1,9 @@
 /**
  * POST /api/invite/revoke — Super-admin only.
- * Revokes the invitation in Clerk (invalidates the link), then deletes the Convex row.
+ *
+ * Revokes the Clerk invitation (critical) then best-effort deletes the Convex
+ * row. Convex cleanup failures never cause a 500 — the client also runs a
+ * fallback client-side deletion so rows always get cleared.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { clerkClient, auth } from "@clerk/nextjs/server";
@@ -14,48 +17,28 @@ import {
   getClerkErrorMessage,
 } from "@/lib/clerk-revoke-invitation";
 
-function convexClientErrorMessage(err: unknown): string {
+function extractErrorMessage(err: unknown): string {
   if (err instanceof ConvexError) {
     const d = err.data;
     if (typeof d === "string") return d;
-    if (d !== undefined && d !== null && typeof d === "object" && "message" in d) {
+    if (d && typeof d === "object" && "message" in d) {
       const m = (d as { message?: unknown }).message;
       if (typeof m === "string") return m;
     }
     if (err.message.length > 0) return err.message;
   }
   if (err instanceof Error) return err.message;
-  try {
-    return JSON.stringify(err);
-  } catch {
-    return String(err);
-  }
-}
-
-function statusForConvexMutationFailure(message: string): number {
-  if (
-    message.includes("Super admin access required") ||
-    message.includes("Authentication required")
-  ) {
-    return 403;
-  }
-  if (
-    message.includes("already accepted") ||
-    message.includes("Only pending invitations")
-  ) {
-    return 409;
-  }
-  return 500;
+  return String(err);
 }
 
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
+  /* ── Auth gate ────────────────────────────────────────────────── */
   const { userId, getToken } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
   const token = await getToken({ template: "convex" });
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -63,15 +46,11 @@ export async function POST(request: NextRequest) {
 
   let currentUser;
   try {
-    currentUser = await fetchQuery(
-      api.users.getCurrentUser,
-      {},
-      { token }
-    );
+    currentUser = await fetchQuery(api.users.getCurrentUser, {}, { token });
   } catch (err: unknown) {
     console.error("[api/invite/revoke] getCurrentUser failed:", err);
     return NextResponse.json(
-      { error: convexClientErrorMessage(err) },
+      { error: extractErrorMessage(err) },
       { status: 500 }
     );
   }
@@ -79,6 +58,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  /* ── Parse body ───────────────────────────────────────────────── */
   let body: { clerkInvitationId?: unknown; invitationId?: unknown };
   try {
     body = await request.json();
@@ -90,69 +70,44 @@ export async function POST(request: NextRequest) {
     typeof body.clerkInvitationId === "string"
       ? body.clerkInvitationId.trim()
       : "";
-
-  const invitationIdRaw =
+  const invitationId =
     typeof body.invitationId === "string" ? body.invitationId.trim() : "";
 
-  if (!clerkInvitationId && !invitationIdRaw) {
+  if (!clerkInvitationId && !invitationId) {
     return NextResponse.json(
       { error: "clerkInvitationId or invitationId is required" },
       { status: 400 }
     );
   }
 
-  let clerkAlreadyRevoked = false;
+  /* ── 1. Clerk revoke (the critical step) ──────────────────────── */
+  let clerkRevoked = false;
   if (clerkInvitationId) {
     try {
       const client = await clerkClient();
       await revokeClerkInvitation(client, clerkInvitationId);
+      clerkRevoked = true;
     } catch (err: unknown) {
-      if (!isBenignClerkRevokeFailure(err)) {
+      if (isBenignClerkRevokeFailure(err)) {
+        clerkRevoked = true;
+        console.info(
+          "[api/invite/revoke] Clerk invitation already inactive:",
+          clerkInvitationId
+        );
+      } else {
         console.error("[api/invite/revoke] Clerk revoke failed:", err);
         return NextResponse.json(
           { error: getClerkErrorMessage(err) },
           { status: 400 }
         );
       }
-      clerkAlreadyRevoked = true;
-      console.warn(
-        "[api/invite/revoke] Clerk invitation already inactive; checking Convex sync:",
-        err
-      );
     }
   } else {
-    clerkAlreadyRevoked = true;
+    clerkRevoked = true;
   }
 
-  // Clerk may have revoked first (or webhook deleted our row). If Convex already
-  // has no rows, skip fetchMutation — avoids a no-op mutation when prod hides errors.
-  if (clerkAlreadyRevoked && clerkInvitationId) {
-    try {
-      const sync = await fetchQuery(
-        api.invitations.invitationRowsForAdminRevoke,
-        { clerkInvitationId },
-        { token }
-      );
-      if (!sync.ok) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-      if (sync.hasAccepted) {
-        return NextResponse.json(
-          {
-            error:
-              "This invitation was already accepted; it cannot be removed from the list.",
-          },
-          { status: 409 }
-        );
-      }
-    } catch (err: unknown) {
-      console.error(
-        "[api/invite/revoke] invitationRowsForAdminRevoke failed:",
-        err
-      );
-      // Fall through to deleteInvitation so we still try to clear pending rows.
-    }
-  }
+  /* ── 2. Convex cleanup (best-effort, never causes 500) ────────── */
+  const warnings: string[] = [];
 
   if (clerkInvitationId) {
     try {
@@ -162,28 +117,35 @@ export async function POST(request: NextRequest) {
         { token }
       );
     } catch (err: unknown) {
-      console.error("[api/invite/revoke] Convex deleteInvitation failed:", err);
-      const message = convexClientErrorMessage(err);
-      const status = statusForConvexMutationFailure(message);
-      return NextResponse.json({ error: message }, { status });
+      const msg = extractErrorMessage(err);
+      console.warn("[api/invite/revoke] deleteInvitation:", msg);
+      if (msg.includes("already accepted")) {
+        return NextResponse.json(
+          { error: "This invitation was already accepted. Use 'Remove from league' instead." },
+          { status: 409 }
+        );
+      }
+      warnings.push(msg);
     }
   }
 
-  // Best-effort: delete by Convex document id (fixes stuck rows / Clerk id mismatch).
-  if (invitationIdRaw) {
+  if (invitationId) {
     try {
       await fetchMutation(
         api.invitations.superAdminForceDeleteInvitationRow,
-        { invitationId: invitationIdRaw as Id<"leagueInvitations"> },
+        { invitationId: invitationId as Id<"leagueInvitations"> },
         { token }
       );
     } catch (err: unknown) {
-      console.warn(
-        "[api/invite/revoke] optional invitationId cleanup:",
-        err
-      );
+      const msg = extractErrorMessage(err);
+      console.warn("[api/invite/revoke] forceDeleteRow:", msg);
+      warnings.push(msg);
     }
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({
+    success: true,
+    clerkRevoked,
+    ...(warnings.length > 0 && { warnings }),
+  });
 }

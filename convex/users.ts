@@ -83,7 +83,7 @@ export const updateUserRole = mutation({
     await requireSuperAdmin(ctx);
 
     const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new ConvexError("User not found");
 
     const patch: Record<string, boolean> = {};
     if (args.isCommissioner !== undefined) patch.isCommissioner = args.isCommissioner;
@@ -97,10 +97,10 @@ export const deletePlayer = mutation({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     const admin = await requireSuperAdmin(ctx);
-    if (admin._id === args.userId) throw new Error("You cannot delete yourself");
+    if (admin._id === args.userId) throw new ConvexError("You cannot delete yourself");
 
     const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new ConvexError("User not found");
 
     // Delete scores
     const scores = await ctx.db
@@ -240,7 +240,7 @@ export const updatePlayer = mutation({
     await requireCommissioner(ctx);
 
     const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new ConvexError("User not found");
 
     const updates: Record<string, string | number> = {};
     if (args.name !== undefined) updates.name = args.name;
@@ -276,7 +276,7 @@ export const updateMyHandicap = mutation({
     const user = await requireActiveUser(ctx);
     const h = Math.round(args.handicap);
     if (h < 0 || h > 54) {
-      throw new Error("Handicap must be between 0 and 54");
+      throw new ConvexError("Handicap must be between 0 and 54");
     }
     await ctx.db.patch(user._id, { handicap: h });
   },
@@ -306,10 +306,10 @@ export const suspendPlayer = mutation({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     const admin = await requireCommissioner(ctx);
-    if (admin._id === args.userId) throw new Error("You cannot suspend yourself");
+    if (admin._id === args.userId) throw new ConvexError("You cannot suspend yourself");
 
     const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new ConvexError("User not found");
 
     await ctx.db.patch(args.userId, { isSuspended: true });
 
@@ -332,7 +332,7 @@ export const unsuspendPlayer = mutation({
     const admin = await requireCommissioner(ctx);
 
     const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new ConvexError("User not found");
 
     await ctx.db.patch(args.userId, { isSuspended: false });
 
@@ -358,7 +358,7 @@ export const setPlayerVisibility = mutation({
     await requireCommissioner(ctx);
 
     const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new ConvexError("User not found");
 
     await ctx.db.patch(args.userId, { hiddenFromDirectory: args.hidden });
   },

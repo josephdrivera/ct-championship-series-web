@@ -239,6 +239,7 @@ function InvitationList({ enabled }: { enabled: boolean }) {
     invitationId: LeagueInvitationId
   ) {
     setCancellingInvitationId(invitationId as string);
+    let apiOk = false;
     try {
       const res = await fetch("/api/invite/revoke", {
         method: "POST",
@@ -249,13 +250,24 @@ function InvitationList({ enabled }: { enabled: boolean }) {
       if (!res.ok) {
         toast.error(data.error || "Failed to cancel invitation");
       } else {
-        toast.success("Invitation cancelled");
+        apiOk = true;
       }
     } catch {
-      toast.error("Failed to cancel invitation");
-    } finally {
-      setCancellingInvitationId(null);
+      // API failed — fall through to client-side cleanup
     }
+
+    // Always try client-side Convex cleanup as a fallback.
+    // If the API already deleted the row this is a harmless no-op.
+    try {
+      await forceDeleteInvitation({ invitationId });
+    } catch {
+      // Row may already be gone — that's fine
+    }
+
+    if (apiOk) {
+      toast.success("Invitation cancelled");
+    }
+    setCancellingInvitationId(null);
   }
 
   async function handleClearPendingRow(invitationId: LeagueInvitationId) {

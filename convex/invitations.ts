@@ -126,11 +126,16 @@ export const invitationDetailForSuperAdmin = query({
 export const superAdminForceDeleteInvitationRow = mutation({
   args: { invitationId: v.id("leagueInvitations") },
   handler: async (ctx, args) => {
-    await requireSuperAdmin(ctx);
+    try {
+      await requireSuperAdmin(ctx);
+    } catch (e) {
+      if (e instanceof ConvexError) throw e;
+      throw new ConvexError("Authentication failed — please refresh and try again");
+    }
+
     const inv = await ctx.db.get(args.invitationId);
     if (!inv) return;
 
-    // Block only when an accepted invite still points at a real user account.
     if (inv.status === "accepted" && inv.acceptedUserId) {
       const user = await ctx.db.get(inv.acceptedUserId);
       if (user) {
@@ -140,7 +145,12 @@ export const superAdminForceDeleteInvitationRow = mutation({
       }
     }
 
-    await ctx.db.delete(args.invitationId);
+    try {
+      await ctx.db.delete(args.invitationId);
+    } catch (e) {
+      if (e instanceof ConvexError) throw e;
+      throw new ConvexError("Failed to delete invitation row — it may have been removed already");
+    }
   },
 });
 
@@ -183,7 +193,12 @@ export const listForAdmin = query({
 export const deleteInvitation = mutation({
   args: { clerkInvitationId: v.string() },
   handler: async (ctx, args) => {
-    await requireSuperAdmin(ctx);
+    try {
+      await requireSuperAdmin(ctx);
+    } catch (e) {
+      if (e instanceof ConvexError) throw e;
+      throw new ConvexError("Authentication failed — please refresh and try again");
+    }
 
     const result = await removeInvitationRowAfterRevoke(
       ctx,
