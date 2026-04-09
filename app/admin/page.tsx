@@ -34,6 +34,7 @@ const quickActions = [
   { href: "/admin/courses", label: "Add Course" },
   { href: "/admin/players", label: "Players & roles" },
   { href: "/admin/notifications", label: "Send Announcement" },
+  { href: "/help#commissioner", label: "Help & Guides" },
 ];
 
 export default function AdminDashboard() {

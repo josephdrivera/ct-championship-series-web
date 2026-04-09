@@ -11,6 +11,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { isResendConfigured, sendMembershipRevokedEmail } from "@/lib/email";
 import { getSiteOrigin } from "@/lib/site-url";
+import { rejectOversizedPayload } from "@/lib/api-guard";
 
 function convexClientErrorMessage(err: unknown): string {
   if (err instanceof ConvexError) {
@@ -33,6 +34,9 @@ function convexClientErrorMessage(err: unknown): string {
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
+  const oversized = rejectOversizedPayload(request);
+  if (oversized) return oversized;
+
   const { userId, getToken } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

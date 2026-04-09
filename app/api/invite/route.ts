@@ -9,6 +9,7 @@ import { fetchQuery, fetchMutation } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { isResendConfigured, sendInvitationEmail } from "@/lib/email";
 import { getSignUpUrl } from "@/lib/site-url";
+import { rejectOversizedPayload } from "@/lib/api-guard";
 
 type ClerkErrBody = {
   errors?: Array<{
@@ -112,6 +113,9 @@ function mapClerkErrors(
 }
 
 export async function POST(request: NextRequest) {
+  const oversized = rejectOversizedPayload(request);
+  if (oversized) return oversized;
+
   // Verify the user is authenticated
   const { userId, getToken } = await auth();
   if (!userId) {

@@ -29,6 +29,7 @@ const navLinks = [
   { href: "/events", label: "Events" },
   { href: "/players", label: "Players" },
   { href: "/history", label: "History" },
+  { href: "/help", label: "Help" },
 ];
 
 export default function Header({

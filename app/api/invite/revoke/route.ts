@@ -16,6 +16,7 @@ import {
   isBenignClerkRevokeFailure,
   getClerkErrorMessage,
 } from "@/lib/clerk-revoke-invitation";
+import { rejectOversizedPayload } from "@/lib/api-guard";
 
 function extractErrorMessage(err: unknown): string {
   if (err instanceof ConvexError) {
@@ -34,6 +35,9 @@ function extractErrorMessage(err: unknown): string {
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
+  const oversized = rejectOversizedPayload(request);
+  if (oversized) return oversized;
+
   /* ── Auth gate ────────────────────────────────────────────────── */
   const { userId, getToken } = await auth();
   if (!userId) {

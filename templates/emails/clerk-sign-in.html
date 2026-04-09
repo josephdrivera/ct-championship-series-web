@@ -1,0 +1,73 @@
+<!--
+  CT Championship Series — Branded Sign-In (Magic Link) Email Template
+  =====================================================================
+
+  HOW TO USE:
+  1. Go to your Clerk Dashboard → Customization → Emails
+  2. Select the "Magic Link" email template
+  3. Switch to HTML editing mode
+  4. Paste this template in, replacing the default Clerk template
+  5. Clerk will inject the magic link URL via its template variables
+
+  Clerk template variables used:
+  - {{magic_link}}  — the one-time sign-in URL
+  - {{app_name}}    — your Clerk application name ("CT Championship Series")
+
+  NOTE: The default Clerk template shows the user's IP address and location.
+  This template removes that section entirely for a cleaner experience.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — CT Championship Series</title>
+</head>
+<body style="margin:0;padding:0;background-color:#FDF8F0;font-family:Georgia,'Times New Roman',serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FDF8F0;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#002E1F;border-radius:12px 12px 0 0;padding:48px 40px;text-align:center;">
+              <div style="font-family:Georgia,'Times New Roman',serif;font-size:56px;font-weight:bold;color:#F2C75C;letter-spacing:4px;">CT</div>
+              <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:11px;color:#FDF8F0;text-transform:uppercase;letter-spacing:4px;margin-top:8px;opacity:0.85;">Championship Series</div>
+            </td>
+          </tr>
+          <!-- Gold divider -->
+          <tr>
+            <td style="background-color:#F2C75C;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="background-color:#FFFFFF;padding:48px 40px;">
+              <h1 style="margin:0 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:28px;color:#002E1F;font-weight:700;">Sign In to Your Account</h1>
+              <div style="width:48px;height:3px;background-color:#F2C75C;margin:0 0 24px;border-radius:2px;"></div>
+              <p style="margin:0 0 20px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:16px;line-height:26px;color:#333333;">Click the button below to securely sign in to the CT Championship Series. This link will expire in 10 minutes.</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                <tr>
+                  <td style="border-radius:8px;background-color:#006747;">
+                    <a href="{{magic_link}}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:16px 48px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:8px;letter-spacing:0.5px;">Sign In</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:32px 0 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#999999;text-align:center;">If the button doesn't work, copy and paste this link into your browser:<br />
+                <a href="{{magic_link}}" style="color:#006747;word-break:break-all;">{{magic_link}}</a>
+              </p>
+              <p style="margin:24px 0 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#999999;text-align:center;">If you didn't request this, you can safely ignore this email.</p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#002E1F;border-radius:0 0 12px 12px;padding:32px 40px;text-align:center;">
+              <p style="margin:0 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:bold;color:#F2C75C;">CT Championship Series</p>
+              <p style="margin:0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#FDF8F0;opacity:0.6;">Connecticut's Premier Golf League</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

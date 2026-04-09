@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePreloadedQuery, useQuery, Preloaded } from "convex/react";
@@ -12,6 +12,7 @@ import { formatPoints } from "@/lib/format";
 import CountdownTimer from "@/components/CountdownTimer";
 import WelcomeModal from "@/components/modals/WelcomeModal";
 import EventCountdownModal from "@/components/modals/EventCountdownModal";
+import confetti from "canvas-confetti";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -202,6 +203,28 @@ export default function HomeContent({
   const events = usePreloadedQuery(preloadedEvents);
   const currentUser = useQuery(api.users.getCurrentUser);
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const confettiFired = useRef(false);
+
+  // Fire confetti for new players, then show welcome modal after delay
+  useEffect(() => {
+    if (!currentUser || currentUser.hasSeenWelcome || confettiFired.current) return;
+    confettiFired.current = true;
+
+    const colors = ["#F2C75C", "#006747", "#D4AF37", "#002E1F"];
+    // Burst from left
+    confetti({ particleCount: 80, angle: 60, spread: 55, origin: { x: 0, y: 0.6 }, colors });
+    // Burst from right
+    confetti({ particleCount: 80, angle: 120, spread: 55, origin: { x: 1, y: 0.6 }, colors });
+    // Center burst after short delay
+    setTimeout(() => {
+      confetti({ particleCount: 100, spread: 100, origin: { x: 0.5, y: 0.5 }, colors });
+    }, 300);
+
+    // Show welcome modal after confetti settles
+    const timer = setTimeout(() => setShowWelcomeModal(true), 2000);
+    return () => clearTimeout(timer);
+  }, [currentUser]);
 
   const top3 = standings.slice(0, 3);
 
@@ -616,7 +639,7 @@ export default function HomeContent({
 
       {/* Welcome Modal — first-time users */}
       <SignedIn>
-        {currentUser && !currentUser.hasSeenWelcome && !welcomeDismissed && (
+        {currentUser && !currentUser.hasSeenWelcome && !welcomeDismissed && showWelcomeModal && (
           <WelcomeModal
             user={currentUser}
             onClose={() => setWelcomeDismissed(true)}

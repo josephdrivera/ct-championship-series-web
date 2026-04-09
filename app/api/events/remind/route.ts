@@ -8,8 +8,12 @@ import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { isResendConfigured, sendReminderEmail } from "@/lib/email";
+import { rejectOversizedPayload } from "@/lib/api-guard";
 
 export async function POST(request: NextRequest) {
+  const oversized = rejectOversizedPayload(request);
+  if (oversized) return oversized;
+
   const { userId, getToken } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

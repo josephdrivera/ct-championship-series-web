@@ -13,6 +13,7 @@ import {
   sendCommissionerAppointmentEmail,
 } from "@/lib/email";
 import { getSiteOrigin } from "@/lib/site-url";
+import { rejectOversizedPayload } from "@/lib/api-guard";
 
 export const runtime = "nodejs";
 
@@ -64,6 +65,9 @@ async function getContactWithCommissionerRetry(
 }
 
 export async function POST(request: NextRequest) {
+  const oversized = rejectOversizedPayload(request);
+  if (oversized) return oversized;
+
   try {
     const { userId: clerkUserId, getToken } = await auth();
     if (!clerkUserId) {

@@ -295,7 +295,11 @@ export const bulkUpdateHandicaps = mutation({
     await requireCommissioner(ctx);
 
     for (const { userId, handicap } of args.updates) {
-      await ctx.db.patch(userId, { handicap });
+      const rounded = Math.round(handicap);
+      if (rounded < 0 || rounded > 54) {
+        throw new ConvexError(`Invalid handicap ${handicap} — must be 0-54`);
+      }
+      await ctx.db.patch(userId, { handicap: rounded });
     }
   },
 });
