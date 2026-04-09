@@ -73,6 +73,29 @@ export async function sendInvitationEmail(params: {
   }
 }
 
+/** New commissioner — uses `commissioner-appointed.html`. */
+export async function sendCommissionerAppointmentEmail(params: {
+  to: string;
+  memberName: string;
+  siteUrl: string;
+}): Promise<void> {
+  const html = renderTemplate(loadTemplate("commissioner-appointed"), {
+    APP_NAME: appName(),
+    MEMBER_NAME: escapeHtml(params.memberName),
+    SITE_URL: escapeHtml(params.siteUrl),
+  });
+  const resend = getResend();
+  const { error } = await resend.emails.send({
+    from: fromAddress(),
+    to: params.to,
+    subject: `You're a commissioner — ${appName()}`,
+    html,
+  });
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 /** Membership removed by admin — uses `membership-revoked.html`. */
 export async function sendMembershipRevokedEmail(params: {
   to: string;

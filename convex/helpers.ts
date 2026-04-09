@@ -71,7 +71,9 @@ export async function requireSuperAdmin(
   ctx: QueryCtx | MutationCtx
 ): Promise<Doc<"users">> {
   const user = await requireUser(ctx);
-  if (!user.isSuperAdmin) throw new ConvexError("Super admin access required");
+  if (user.isSuperAdmin !== true) {
+    throw new ConvexError("Super admin access required");
+  }
   return user;
 }
 

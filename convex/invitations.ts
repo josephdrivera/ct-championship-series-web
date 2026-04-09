@@ -125,34 +125,22 @@ export const invitationDetailForSuperAdmin = query({
  */
 export const superAdminForceDeleteInvitationRow = mutation({
   args: { invitationId: v.id("leagueInvitations") },
-  returns: v.null(),
   handler: async (ctx, args) => {
     await requireSuperAdmin(ctx);
     const inv = await ctx.db.get(args.invitationId);
-    if (!inv) return null;
+    if (!inv) return;
 
-    if (inv.status === "pending") {
-      await ctx.db.delete(args.invitationId);
-      return null;
-    }
-
-    if (inv.status === "accepted") {
-      if (!inv.acceptedUserId) {
-        await ctx.db.delete(args.invitationId);
-        return null;
-      }
+    // Block only when an accepted invite still points at a real user account.
+    if (inv.status === "accepted" && inv.acceptedUserId) {
       const user = await ctx.db.get(inv.acceptedUserId);
-      if (!user) {
-        await ctx.db.delete(args.invitationId);
-        return null;
+      if (user) {
+        throw new ConvexError(
+          "This member still has an account. Use Remove from league to delete their account and email them."
+        );
       }
-      throw new ConvexError(
-        "This member still has an account. Use Remove from league to delete their account and email them."
-      );
     }
 
     await ctx.db.delete(args.invitationId);
-    return null;
   },
 });
 
@@ -194,7 +182,6 @@ export const listForAdmin = query({
  */
 export const deleteInvitation = mutation({
   args: { clerkInvitationId: v.string() },
-  returns: v.null(),
   handler: async (ctx, args) => {
     await requireSuperAdmin(ctx);
 
@@ -202,13 +189,12 @@ export const deleteInvitation = mutation({
       ctx,
       args.clerkInvitationId
     );
-    if (result === "missing") return null;
+    if (result === "missing") return;
     if (result === "accepted") {
       throw new ConvexError(
         "This invitation was already accepted; it cannot be removed from the list."
       );
     }
-    return null;
   },
 });
 

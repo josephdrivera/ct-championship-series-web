@@ -54,6 +54,22 @@ export const listLeagueMembersWithEmail = query({
   },
 });
 
+/** Super-admin: name, email, and roles for server-side emails (e.g. commissioner welcome). */
+export const getUserContactForSuperAdmin = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    await requireSuperAdmin(ctx);
+    const user = await ctx.db.get(args.userId);
+    if (!user) return null;
+    return {
+      name: user.name,
+      email: user.email ?? null,
+      isCommissioner: user.isCommissioner,
+      isSuperAdmin: user.isSuperAdmin === true,
+    };
+  },
+});
+
 // ── Super admin only (commissioners cannot assign admin roles) ─────
 
 /** Sets `isCommissioner` / `isSuperAdmin`. Commissioners have no API path to change these fields. */

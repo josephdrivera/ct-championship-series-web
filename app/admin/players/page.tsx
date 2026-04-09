@@ -8,6 +8,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
 import { RoleBadge } from "@/components/admin/RoleBadge";
 import { PlayerRoleControls } from "@/components/admin/PlayerRoleControls";
+import { notifyCommissionerAppointed } from "@/lib/notify-commissioner-appointed";
 
 function InviteForm() {
   const [email, setEmail] = useState("");
@@ -121,6 +122,19 @@ function EditPlayerForm({
           userId: player._id,
           isCommissioner,
         });
+        if (isCommissioner && !player.isCommissioner) {
+          void notifyCommissionerAppointed(player._id as string).then((r) => {
+            if (r.ok && r.emailed) {
+              toast.success("Congratulations email sent");
+            } else if (r.ok && !r.emailed) {
+              toast.message(
+                "Commissioner updated. No email on file — add one in Clerk to send welcome emails."
+              );
+            } else if (!r.ok) {
+              toast.message(r.error);
+            }
+          });
+        }
       }
 
       toast.success("Player updated");
